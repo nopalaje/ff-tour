@@ -1,314 +1,200 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0a0a0f">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FF Tournament">
-<title>FF Tournament Manager</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FF Cloud Tournament - Final</title>
+    <!-- Library Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0a0a0f; --surface: #12121a; --orange: #ff6b00; --text: #f0f0f0; --border: rgba(255,255,255,0.08); }
+        body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(10,10,15,0.8); backdrop-filter: blur(10px); z-index: 10; }
+        
+        .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); }
+        .tab { flex: 1; padding: 15px; text-align: center; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; color: #555; transition: 0.3s; text-transform: uppercase; }
+        .tab.active { color: var(--orange); border-bottom: 2px solid var(--orange); background: rgba(255,107,0,0.05); }
+        
+        .scroll-area { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 40px; }
+        
+        .card { background: var(--surface); border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid var(--border); }
+        
+        .btn-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
+        .btn-p { padding: 10px 5px; border: 1px solid var(--border); background: #1a1a26; color: white; border-radius: 8px; cursor: pointer; font-family: 'Rajdhani'; font-weight: 600; font-size: 13px; }
+        .btn-p.active { background: var(--orange); border-color: var(--orange); box-shadow: 0 0 10px rgba(255,107,0,0.3); }
+        
+        .sync-status { font-size: 11px; color: #00e676; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .kill-box { display: flex; align-items: center; gap: 15px; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); }
+        .k-btn { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--orange); background: none; color: var(--orange); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .k-btn:active { background: var(--orange); color: white; }
 
-<style>
-:root {
-  --bg: #0a0a0f;
-  --surface: #12121a;
-  --card: #1a1a26;
-  --border: rgba(255,255,255,0.08);
-  --orange: #ff6b00;
-  --gold: #ffd700;
-  --silver: #b0b0b0;
-  --bronze: #cd7f32;
-  --green: #00e676;
-  --blue: #448aff;
-  --red: #ff5252;
-  --text: #f0f0f0;
-  --muted: rgba(240,240,240,0.45);
-  --r: 12px;
-}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;overflow:hidden;}
-body{
-  background:var(--bg);color:var(--text);
-  font-family:'Barlow',sans-serif;
-  display:flex;flex-direction:column;
-  position:fixed;inset:0;overflow:hidden;
-}
-
-/* Header & Status */
-header{flex-shrink:0;background:rgba(10,10,15,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;z-index:10;}
-.logo{display:flex;align-items:center;gap:10px;}
-.logo-badge{background:var(--orange);color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;padding:4px 9px;border-radius:7px;letter-spacing:1px;}
-.logo-text{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:600;}
-
-/* Pot Navigation */
-.pot-bar{flex-shrink:0;display:flex;align-items:center;background:rgba(10,10,15,0.97);border-bottom:1px solid var(--border);padding:0 8px;height:48px;overflow-x:auto;scrollbar-width:none;}
-.pot-bar::-webkit-scrollbar{display:none;}
-.pot-btn{flex-shrink:0;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;cursor:pointer;margin-right:6px;}
-.pot-btn.active{background:var(--orange);border-color:var(--orange);color:#fff;}
-
-/* Tabs */
-.tabs{flex-shrink:0;display:flex;background:rgba(10,10,15,0.95);border-bottom:1px solid var(--border);}
-.tab{flex:1;height:48px;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:0.2s;}
-.tab.active{color:var(--orange);border-bottom-color:var(--orange);}
-
-/* Content Area */
-.scroll-area{flex:1;overflow-y:auto;padding:12px;position:relative;}
-
-/* Cards */
-.ti-row{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;}
-.ti-header{padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;}
-.ti-name{flex:1;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:17px;}
-.ti-pts{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--orange);}
-.ti-panel{display:none;padding:15px;background:rgba(0,0,0,0.2);border-top:1px solid var(--border);}
-.ti-row.expanded .ti-panel{display:block;}
-
-/* Controls */
-.pl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:15px;}
-.pl-btn{padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'Rajdhani',sans-serif;font-weight:600;cursor:pointer;}
-.pl-btn.active{background:var(--orange);border-color:var(--orange);}
-.kill-ctrl{display:flex;align-items:center;gap:15px;justify-content:center;background:var(--surface);padding:10px;border-radius:10px;}
-.kill-btn{width:40px;height:40px;border-radius:50%;border:none;background:var(--card);color:white;font-size:20px;cursor:pointer;}
-
-/* Leaderboard */
-.tcard{background:var(--card);padding:15px;border-radius:12px;margin-bottom:8px;display:flex;align-items:center;gap:15px;border-left:4px solid transparent;}
-.tcard.rank-1{border-left-color: var(--gold); background: linear-gradient(90deg, rgba(255,215,0,0.05), transparent);}
-.rank-num{width:30px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;color:var(--muted);}
-
-/* Bottom Sheet / Modal */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:none;align-items:flex-end;}
-.overlay.open{display:flex;}
-.sheet{width:100%;background:var(--card);padding:20px;border-radius:20px 20px 0 0;max-height:80vh;overflow-y:auto;}
-.btn-main{width:100%;padding:15px;background:var(--orange);border:none;border-radius:12px;color:white;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;cursor:pointer;margin-top:10px;}
-
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:black;padding:10px 20px;border-radius:20px;font-size:14px;font-weight:600;z-index:1000;display:none;}
-</style>
+        #loading-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; gap: 15px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--orange); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
 
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="font-family:'Rajdhani'; font-weight:700; color:var(--orange)">CONNECTING TO DATABASE...</div>
+</div>
+
 <header>
-  <div class="logo">
-    <div class="logo-badge">FF</div>
-    <div class="logo-text">Tournament</div>
-  </div>
-  <div style="display:flex;gap:10px;">
-    <button onclick="openMgr()" style="background:none;border:none;font-size:20px;cursor:pointer;">⚙️</button>
-    <button onclick="resetData()" style="background:none;border:none;font-size:20px;cursor:pointer;">🔄</button>
-  </div>
+    <div style="font-family:'Rajdhani'; font-weight:700; font-size:20px; letter-spacing:1px;">FF CLOUD <span id="sync" class="sync-status">● Live</span></div>
+    <button onclick="location.reload()" style="background:none; border:none; color:white; font-size:18px; cursor:pointer;">🔄</button>
 </header>
 
-<div class="pot-bar" id="potBar">
-  <!-- Pot buttons generated here -->
-</div>
-
 <div class="tabs">
-  <div class="tab active" id="tabInput" onclick="switchTab('input')">✏️ INPUT</div>
-  <div class="tab" id="tabBoard" onclick="switchTab('board')">🏆 LEADERBOARD</div>
+    <div class="tab active" id="t-input" onclick="show('input')">INPUT SKOR</div>
+    <div class="tab" id="t-board" onclick="show('board')">LEADERBOARD</div>
 </div>
 
-<div class="scroll-area" id="pageInput">
-  <div id="tiList"></div>
+<div id="page-input" class="scroll-area">
+    <div id="list-input"></div>
 </div>
 
-<div class="scroll-area" id="pageBoard" style="display:none">
-  <div id="tList"></div>
+<div id="page-board" class="scroll-area" style="display:none">
+    <div id="list-board"></div>
 </div>
-
-<!-- Team Manager Modal -->
-<div class="overlay" id="mgrSheet">
-  <div class="sheet">
-    <h2 style="font-family:'Rajdhani';margin-bottom:15px;">Daftar Nama Tim</h2>
-    <textarea id="pasteBox" placeholder="Tempel nama tim di sini (satu per baris)..." style="width:100%;height:150px;background:var(--surface);border:1px solid var(--border);color:white;padding:10px;border-radius:10px;margin-bottom:10px;"></textarea>
-    <button class="btn-main" onclick="saveTeams()">Simpan & Update</button>
-    <button onclick="closeSheet('mgrSheet')" style="width:100%;background:none;border:none;color:var(--muted);margin-top:10px;cursor:pointer;">Tutup</button>
-  </div>
-</div>
-
-<div class="toast" id="toast">Tersimpan!</div>
 
 <script>
-// --- KONFIGURASI POIN ---
-const PLACEMENT_POINTS = [0, 12, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0]; 
-const KILL_POINT = 1;
+// === KREDENSI SUPABASE USER ===
+const SUPABASE_URL = 'https://yhzqlxsmhtwvzorwetsr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloenFseHNtaHR3dnpvcndldHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5OTY2ODcsImV4cCI6MjA5MzU3MjY4N30.TLFhCNKjkxu67OMwLYdjkSJykkVJUZUWlOs6aNvdD58';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- STATE ---
-let state = {
-  activePot: 0,
-  pots: [
-    { teams: Array.from({length:12}, (_,i)=> `Tim ${i+1}`), scores: Array.from({length:12}, ()=> ({placement:0, kills:0})) }
-  ]
-};
+const TEAMS = ["Tim 1", "Tim 2", "Tim 3", "Tim 4", "Tim 5", "Tim 6", "Tim 7", "Tim 8", "Tim 9", "Tim 10", "Tim 11", "Tim 12"];
+const PLACEMENT_POINTS = [0, 12, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0];
+let currentScores = TEAMS.map(() => ({ placement: 0, kills: 0 }));
 
-// --- CORE FUNCTIONS ---
-function init() {
-  const saved = localStorage.getItem('ff_tourney_data');
-  if(saved) state = JSON.parse(saved);
-  renderPotBar();
-  renderInput();
-}
+// Memuat data pertama kali
+async function loadData() {
+    const { data, error } = await _supabase.from('tournament_data').select('*');
+    if (error) {
+        console.error("Fetch Error:", error);
+        document.getElementById('sync').textContent = "● Error Connection";
+        document.getElementById('sync').style.color = "#f44336";
+        return;
+    }
 
-function saveData() {
-  localStorage.setItem('ff_tourney_data', JSON.stringify(state));
-}
-
-function renderPotBar() {
-  const bar = document.getElementById('potBar');
-  bar.innerHTML = state.pots.map((_, i) => `
-    <button class="pot-btn ${state.activePot === i ? 'active' : ''}" onclick="changePot(${i})">POT ${i+1}</button>
-  `).join('') + `<button class="pot-btn" onclick="addPot()">+ Baru</button>`;
-}
-
-function changePot(idx) {
-  state.activePot = idx;
-  renderPotBar();
-  renderInput();
-  renderBoard();
-}
-
-function addPot() {
-  state.pots.push({
-    teams: [...state.pots[0].teams],
-    scores: Array.from({length: state.pots[0].teams.length}, ()=> ({placement:0, kills:0}))
-  });
-  state.activePot = state.pots.length - 1;
-  saveData();
-  renderPotBar();
-  renderInput();
+    // Update state lokal
+    const freshScores = TEAMS.map(() => ({ placement: 0, kills: 0 }));
+    data.forEach(row => {
+        if (freshScores[row.team_index]) {
+            freshScores[row.team_index] = { placement: row.placement, kills: row.kills };
+        }
+    });
+    
+    currentScores = freshScores;
+    renderInput();
+    if(document.getElementById('page-board').style.display === 'block') renderBoard();
+    
+    // Hilangkan loading screen
+    document.getElementById('loading-overlay').style.display = 'none';
 }
 
 function renderInput() {
-  const list = document.getElementById('tiList');
-  const pot = state.pots[state.activePot];
-  
-  list.innerHTML = pot.teams.map((name, i) => {
-    const score = pot.scores[i];
-    const total = (PLACEMENT_POINTS[score.placement] || 0) + (score.kills * KILL_POINT);
-    
-    return `
-      <div class="ti-row" id="row-${i}">
-        <div class="ti-header" onclick="this.parentElement.classList.toggle('expanded')">
-          <span style="color:var(--muted)">${i+1}</span>
-          <span class="ti-name">${name}</span>
-          <span class="ti-pts">${total} pt</span>
+    const container = document.getElementById('list-input');
+    container.innerHTML = TEAMS.map((name, i) => {
+        const total = (PLACEMENT_POINTS[currentScores[i].placement] || 0) + currentScores[i].kills;
+        return `
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-family:'Rajdhani'; font-weight:700; font-size:18px; letter-spacing:0.5px;">${name}</span>
+                <span style="color:var(--orange); font-weight:700; font-size:18px;">${total} PT</span>
+            </div>
+            <div class="btn-group">
+                ${[1,2,3,4,5,6,7,8,9,10,11,12].map(p => `
+                    <button class="btn-p ${currentScores[i].placement === p ? 'active' : ''}" 
+                        onclick="updateScore(${i}, ${p}, ${currentScores[i].kills})">#${p}</button>
+                `).join('')}
+            </div>
+            <div class="kill-box">
+                <span style="font-size:13px; font-weight:600; flex:1;">TOTAL KILLS:</span>
+                <button onclick="updateScore(${i}, ${currentScores[i].placement}, ${currentScores[i].kills - 1})" class="k-btn">-</button>
+                <span style="width:30px; text-align:center; font-weight:700; font-size:20px; font-family:'Rajdhani'">${currentScores[i].kills}</span>
+                <button onclick="updateScore(${i}, ${currentScores[i].placement}, ${currentScores[i].kills + 1})" class="k-btn">+</button>
+            </div>
         </div>
-        <div class="ti-panel">
-          <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">PLACEMENT</p>
-          <div class="pl-grid">
-            ${[1,2,3,4,5,6,7,8,9,10,11,12].map(p => `
-              <button class="pl-btn ${score.placement === p ? 'active' : ''}" onclick="setPlacement(${i}, ${p})">#${p}</button>
-            `).join('')}
-          </div>
-          <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">TOTAL KILLS</p>
-          <div class="kill-ctrl">
-            <button class="kill-btn" onclick="updateKill(${i}, -1)">-</button>
-            <span style="font-size:24px; font-weight:700; width:40px; text-align:center;">${score.kills}</span>
-            <button class="kill-btn" onclick="updateKill(${i}, 1)">+</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+    `}).join('');
 }
 
-function setPlacement(teamIdx, p) {
-  const pot = state.pots[state.activePot];
-  pot.scores[teamIdx].placement = pot.scores[teamIdx].placement === p ? 0 : p;
-  saveData();
-  renderInput();
-  showToast();
-}
+async function updateScore(idx, p, k) {
+    const newKills = Math.max(0, k);
+    // Jika klik peringkat yang sama, reset ke 0
+    const newPlacement = (currentScores[idx].placement === p && k === currentScores[idx].kills) ? 0 : p;
 
-function updateKill(teamIdx, val) {
-  const pot = state.pots[state.activePot];
-  pot.scores[teamIdx].kills = Math.max(0, pot.scores[teamIdx].kills + val);
-  saveData();
-  renderInput();
-  showToast();
+    // UI Feedback
+    document.getElementById('sync').textContent = "● Saving...";
+    document.getElementById('sync').style.color = "#ffeb3b";
+
+    // Kirim ke Supabase
+    const { error } = await _supabase
+        .from('tournament_data')
+        .upsert({ 
+            team_index: idx, 
+            placement: newPlacement, 
+            kills: newKills,
+            pot_id: 1 
+        }, { onConflict: 'team_index' });
+
+    if (error) {
+        console.error("Save Error:", error);
+        document.getElementById('sync').textContent = "● Error";
+        document.getElementById('sync').style.color = "#f44336";
+    } else {
+        // Jika sukses, biarkan Realtime Listener yang mengupdate UI
+        document.getElementById('sync').textContent = "● Saved";
+        document.getElementById('sync').style.color = "#00e676";
+        setTimeout(() => { document.getElementById('sync').textContent = "● Live"; }, 1500);
+    }
 }
 
 function renderBoard() {
-  const pot = state.pots[state.activePot];
-  const list = document.getElementById('tList');
-  
-  const sorted = pot.teams.map((name, i) => {
-    const score = pot.scores[i];
-    return {
-      name,
-      placement: score.placement,
-      kills: score.kills,
-      total: (PLACEMENT_POINTS[score.placement] || 0) + (score.kills * KILL_POINT)
-    };
-  }).sort((a, b) => b.total - a.total || b.kills - a.kills);
+    const sorted = TEAMS.map((name, i) => ({
+        name, ...currentScores[i],
+        total: (PLACEMENT_POINTS[currentScores[i].placement] || 0) + currentScores[i].kills
+    })).sort((a, b) => b.total - a.total || b.kills - a.kills);
 
-  list.innerHTML = sorted.map((t, i) => `
-    <div class="tcard ${i === 0 ? 'rank-1' : ''}">
-      <span class="rank-num">${i + 1}</span>
-      <div style="flex:1">
-        <div style="font-weight:700; font-family:'Rajdhani'; font-size:18px;">${t.name}</div>
-        <div style="font-size:12px; color:var(--muted)">#${t.placement || '-'} | ${t.kills} Kills</div>
-      </div>
-      <div style="font-size:22px; font-weight:700; color:var(--orange)">${t.total}</div>
-    </div>
-  `).join('');
+    document.getElementById('list-board').innerHTML = sorted.map((t, i) => `
+        <div class="card" style="display:flex; align-items:center; gap:15px; border-left: 4px solid ${i < 3 ? 'var(--orange)' : 'transparent'}">
+            <div style="font-family:'Rajdhani'; font-size:22px; font-weight:700; width:25px; color:${i < 3 ? 'var(--orange)' : '#555'}">${i+1}</div>
+            <div style="flex:1">
+                <div style="font-weight:700; font-size:16px; letter-spacing:0.5px;">${t.name}</div>
+                <div style="font-size:11px; color:#777; margin-top:2px; text-transform:uppercase">RANK #${t.placement || '-'} | ${t.kills} KILLS</div>
+            </div>
+            <div style="text-align:right">
+                <div style="font-size:22px; font-weight:700; color:var(--orange); font-family:'Rajdhani'">${t.total}</div>
+                <div style="font-size:9px; color:#555; font-weight:600;">POINTS</div>
+            </div>
+        </div>
+    `).join('');
 }
 
-// --- UI NAVIGATION ---
-function switchTab(tab) {
-  document.getElementById('pageInput').style.display = tab === 'input' ? 'block' : 'none';
-  document.getElementById('pageBoard').style.display = tab === 'board' ? 'block' : 'none';
-  document.getElementById('tabInput').classList.toggle('active', tab === 'input');
-  document.getElementById('tabBoard').classList.toggle('active', tab === 'board');
-  if(tab === 'board') renderBoard();
+function show(page) {
+    document.getElementById('page-input').style.display = page === 'input' ? 'block' : 'none';
+    document.getElementById('page-board').style.display = page === 'board' ? 'block' : 'none';
+    document.getElementById('t-input').classList.toggle('active', page === 'input');
+    document.getElementById('t-board').classList.toggle('active', page === 'board');
+    if(page === 'board') renderBoard();
 }
 
-function openMgr() {
-  document.getElementById('pasteBox').value = state.pots[state.activePot].teams.join('\n');
-  document.getElementById('mgrSheet').classList.add('open');
-}
+// Menjalankan inisialisasi
+loadData();
 
-function closeSheet(id) {
-  document.getElementById(id).classList.remove('open');
-}
+// === SINKRONISASI REALTIME ===
+// Mendengarkan perubahan di database dari perangkat lain
+_supabase
+  .channel('public:tournament_data')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_data' }, (payload) => {
+    loadData(); // Refresh data otomatis jika ada perubahan
+  })
+  .subscribe();
 
-function saveTeams() {
-  const text = document.getElementById('pasteBox').value.trim();
-  if(!text) return;
-  const newTeams = text.split('\n').map(t => t.trim()).filter(t => t);
-  
-  // Update semua pot dengan nama tim baru
-  state.pots.forEach(pot => {
-    pot.teams = [...newTeams];
-    // Sesuaikan jumlah scores dengan jumlah tim baru
-    if(pot.scores.length < newTeams.length) {
-      const diff = newTeams.length - pot.scores.length;
-      for(let i=0; i<diff; i++) pot.scores.push({placement:0, kills:0});
-    }
-  });
-  
-  saveData();
-  closeSheet('mgrSheet');
-  renderInput();
-  showToast("Nama tim diperbarui!");
-}
-
-function resetData() {
-  if(confirm("Hapus semua skor di POT ini? Nama tim tetap ada.")) {
-    state.pots[state.activePot].scores = state.pots[state.activePot].scores.map(()=>({placement:0, kills:0}));
-    saveData();
-    renderInput();
-  }
-}
-
-function showToast(msg = "Tersimpan!") {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', 2000);
-}
-
-// Start App
-init();
 </script>
 </body>
 </html>
