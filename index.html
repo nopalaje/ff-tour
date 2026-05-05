@@ -1,115 +1,314 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FF Tournament Live - Nopal</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0f; color: white; padding: 20px; text-align: center; }
-        .card { background: #161625; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #2d2d3f; }
-        input[type="number"] { background: #252545; color: #ff6b00; border: 1px solid #444; padding: 8px; border-radius: 6px; width: 65px; text-align: center; font-weight: bold; font-size: 16px; }
-        .btn { background: #ff6b00; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 16px; margin-top: 10px; box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3); }
-        .btn:active { transform: scale(0.98); }
-        .status { font-size: 12px; color: #00e676; margin-bottom: 15px; opacity: 0.8; }
-        h2 { margin-bottom: 5px; color: #ff6b00; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FF Tournament">
+<title>FF Tournament Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --card: #1a1a26;
+  --border: rgba(255,255,255,0.08);
+  --orange: #ff6b00;
+  --gold: #ffd700;
+  --silver: #b0b0b0;
+  --bronze: #cd7f32;
+  --green: #00e676;
+  --blue: #448aff;
+  --red: #ff5252;
+  --text: #f0f0f0;
+  --muted: rgba(240,240,240,0.45);
+  --r: 12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Barlow',sans-serif;
+  display:flex;flex-direction:column;
+  position:fixed;inset:0;overflow:hidden;
+}
+
+/* Header & Status */
+header{flex-shrink:0;background:rgba(10,10,15,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;z-index:10;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-badge{background:var(--orange);color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;padding:4px 9px;border-radius:7px;letter-spacing:1px;}
+.logo-text{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:600;}
+
+/* Pot Navigation */
+.pot-bar{flex-shrink:0;display:flex;align-items:center;background:rgba(10,10,15,0.97);border-bottom:1px solid var(--border);padding:0 8px;height:48px;overflow-x:auto;scrollbar-width:none;}
+.pot-bar::-webkit-scrollbar{display:none;}
+.pot-btn{flex-shrink:0;height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;cursor:pointer;margin-right:6px;}
+.pot-btn.active{background:var(--orange);border-color:var(--orange);color:#fff;}
+
+/* Tabs */
+.tabs{flex-shrink:0;display:flex;background:rgba(10,10,15,0.95);border-bottom:1px solid var(--border);}
+.tab{flex:1;height:48px;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:0.2s;}
+.tab.active{color:var(--orange);border-bottom-color:var(--orange);}
+
+/* Content Area */
+.scroll-area{flex:1;overflow-y:auto;padding:12px;position:relative;}
+
+/* Cards */
+.ti-row{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;}
+.ti-header{padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+.ti-name{flex:1;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:17px;}
+.ti-pts{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--orange);}
+.ti-panel{display:none;padding:15px;background:rgba(0,0,0,0.2);border-top:1px solid var(--border);}
+.ti-row.expanded .ti-panel{display:block;}
+
+/* Controls */
+.pl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:15px;}
+.pl-btn{padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'Rajdhani',sans-serif;font-weight:600;cursor:pointer;}
+.pl-btn.active{background:var(--orange);border-color:var(--orange);}
+.kill-ctrl{display:flex;align-items:center;gap:15px;justify-content:center;background:var(--surface);padding:10px;border-radius:10px;}
+.kill-btn{width:40px;height:40px;border-radius:50%;border:none;background:var(--card);color:white;font-size:20px;cursor:pointer;}
+
+/* Leaderboard */
+.tcard{background:var(--card);padding:15px;border-radius:12px;margin-bottom:8px;display:flex;align-items:center;gap:15px;border-left:4px solid transparent;}
+.tcard.rank-1{border-left-color: var(--gold); background: linear-gradient(90deg, rgba(255,215,0,0.05), transparent);}
+.rank-num{width:30px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;color:var(--muted);}
+
+/* Bottom Sheet / Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:100;display:none;align-items:flex-end;}
+.overlay.open{display:flex;}
+.sheet{width:100%;background:var(--card);padding:20px;border-radius:20px 20px 0 0;max-height:80vh;overflow-y:auto;}
+.btn-main{width:100%;padding:15px;background:var(--orange);border:none;border-radius:12px;color:white;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;cursor:pointer;margin-top:10px;}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:black;padding:10px 20px;border-radius:20px;font-size:14px;font-weight:600;z-index:1000;display:none;}
+</style>
 </head>
 <body>
 
-    <h2>🏆 FF LEADERBOARD</h2>
-    <div id="status" class="status">Menghubungkan ke GitHub...</div>
+<header>
+  <div class="logo">
+    <div class="logo-badge">FF</div>
+    <div class="logo-text">Tournament</div>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <button onclick="openMgr()" style="background:none;border:none;font-size:20px;cursor:pointer;">⚙️</button>
+    <button onclick="resetData()" style="background:none;border:none;font-size:20px;cursor:pointer;">🔄</button>
+  </div>
+</header>
 
-    <div id="leaderboard">
-        <!-- Data tim akan muncul di sini -->
-        <p>Memuat data tim...</p>
-    </div>
+<div class="pot-bar" id="potBar">
+  <!-- Pot buttons generated here -->
+</div>
 
-    <button class="btn" onclick="updateSkor()">🚀 UPDATE SKOR LIVE</button>
+<div class="tabs">
+  <div class="tab active" id="tabInput" onclick="switchTab('input')">✏️ INPUT</div>
+  <div class="tab" id="tabBoard" onclick="switchTab('board')">🏆 LEADERBOARD</div>
+</div>
+
+<div class="scroll-area" id="pageInput">
+  <div id="tiList"></div>
+</div>
+
+<div class="scroll-area" id="pageBoard" style="display:none">
+  <div id="tList"></div>
+</div>
+
+<!-- Team Manager Modal -->
+<div class="overlay" id="mgrSheet">
+  <div class="sheet">
+    <h2 style="font-family:'Rajdhani';margin-bottom:15px;">Daftar Nama Tim</h2>
+    <textarea id="pasteBox" placeholder="Tempel nama tim di sini (satu per baris)..." style="width:100%;height:150px;background:var(--surface);border:1px solid var(--border);color:white;padding:10px;border-radius:10px;margin-bottom:10px;"></textarea>
+    <button class="btn-main" onclick="saveTeams()">Simpan & Update</button>
+    <button onclick="closeSheet('mgrSheet')" style="width:100%;background:none;border:none;color:var(--muted);margin-top:10px;cursor:pointer;">Tutup</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">Tersimpan!</div>
 
 <script>
-    // --- KONFIGURASI OTOMATIS ---
-    const OWNER = "nopal"; 
-    const REPO = "ff-tour"; // GANTI ini jika nama repositori Anda bukan 'ff-tour'
-    const TOKEN = "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";
-    const PATH = "data.json";
+// --- KONFIGURASI POIN ---
+const PLACEMENT_POINTS = [0, 12, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0]; 
+const KILL_POINT = 1;
 
-    let daftarTim = [];
-    let currentSha = "";
+// --- STATE ---
+let state = {
+  activePot: 0,
+  pots: [
+    { teams: Array.from({length:12}, (_,i)=> `Tim ${i+1}`), scores: Array.from({length:12}, ()=> ({placement:0, kills:0})) }
+  ]
+};
 
-    // 1. Fungsi Ambil Data Terbaru
-    async function loadData() {
-        try {
-            const response = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?t=${Date.now()}`);
-            const data = await response.json();
-            
-            if (data.content) {
-                currentSha = data.sha;
-                daftarTim = JSON.parse(atob(data.content));
-                render();
-                document.getElementById('status').innerText = "● LIVE: Terakhir diperbarui " + new Date().toLocaleTimeString();
-            }
-        } catch (e) {
-            document.getElementById('status').innerText = "● Gagal sinkronisasi data.";
-            console.error(e);
-        }
+// --- CORE FUNCTIONS ---
+function init() {
+  const saved = localStorage.getItem('ff_tourney_data');
+  if(saved) state = JSON.parse(saved);
+  renderPotBar();
+  renderInput();
+}
+
+function saveData() {
+  localStorage.setItem('ff_tourney_data', JSON.stringify(state));
+}
+
+function renderPotBar() {
+  const bar = document.getElementById('potBar');
+  bar.innerHTML = state.pots.map((_, i) => `
+    <button class="pot-btn ${state.activePot === i ? 'active' : ''}" onclick="changePot(${i})">POT ${i+1}</button>
+  `).join('') + `<button class="pot-btn" onclick="addPot()">+ Baru</button>`;
+}
+
+function changePot(idx) {
+  state.activePot = idx;
+  renderPotBar();
+  renderInput();
+  renderBoard();
+}
+
+function addPot() {
+  state.pots.push({
+    teams: [...state.pots[0].teams],
+    scores: Array.from({length: state.pots[0].teams.length}, ()=> ({placement:0, kills:0}))
+  });
+  state.activePot = state.pots.length - 1;
+  saveData();
+  renderPotBar();
+  renderInput();
+}
+
+function renderInput() {
+  const list = document.getElementById('tiList');
+  const pot = state.pots[state.activePot];
+  
+  list.innerHTML = pot.teams.map((name, i) => {
+    const score = pot.scores[i];
+    const total = (PLACEMENT_POINTS[score.placement] || 0) + (score.kills * KILL_POINT);
+    
+    return `
+      <div class="ti-row" id="row-${i}">
+        <div class="ti-header" onclick="this.parentElement.classList.toggle('expanded')">
+          <span style="color:var(--muted)">${i+1}</span>
+          <span class="ti-name">${name}</span>
+          <span class="ti-pts">${total} pt</span>
+        </div>
+        <div class="ti-panel">
+          <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">PLACEMENT</p>
+          <div class="pl-grid">
+            ${[1,2,3,4,5,6,7,8,9,10,11,12].map(p => `
+              <button class="pl-btn ${score.placement === p ? 'active' : ''}" onclick="setPlacement(${i}, ${p})">#${p}</button>
+            `).join('')}
+          </div>
+          <p style="font-size:11px; color:var(--muted); margin-bottom:8px;">TOTAL KILLS</p>
+          <div class="kill-ctrl">
+            <button class="kill-btn" onclick="updateKill(${i}, -1)">-</button>
+            <span style="font-size:24px; font-weight:700; width:40px; text-align:center;">${score.kills}</span>
+            <button class="kill-btn" onclick="updateKill(${i}, 1)">+</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function setPlacement(teamIdx, p) {
+  const pot = state.pots[state.activePot];
+  pot.scores[teamIdx].placement = pot.scores[teamIdx].placement === p ? 0 : p;
+  saveData();
+  renderInput();
+  showToast();
+}
+
+function updateKill(teamIdx, val) {
+  const pot = state.pots[state.activePot];
+  pot.scores[teamIdx].kills = Math.max(0, pot.scores[teamIdx].kills + val);
+  saveData();
+  renderInput();
+  showToast();
+}
+
+function renderBoard() {
+  const pot = state.pots[state.activePot];
+  const list = document.getElementById('tList');
+  
+  const sorted = pot.teams.map((name, i) => {
+    const score = pot.scores[i];
+    return {
+      name,
+      placement: score.placement,
+      kills: score.kills,
+      total: (PLACEMENT_POINTS[score.placement] || 0) + (score.kills * KILL_POINT)
+    };
+  }).sort((a, b) => b.total - a.total || b.kills - a.kills);
+
+  list.innerHTML = sorted.map((t, i) => `
+    <div class="tcard ${i === 0 ? 'rank-1' : ''}">
+      <span class="rank-num">${i + 1}</span>
+      <div style="flex:1">
+        <div style="font-weight:700; font-family:'Rajdhani'; font-size:18px;">${t.name}</div>
+        <div style="font-size:12px; color:var(--muted)">#${t.placement || '-'} | ${t.kills} Kills</div>
+      </div>
+      <div style="font-size:22px; font-weight:700; color:var(--orange)">${t.total}</div>
+    </div>
+  `).join('');
+}
+
+// --- UI NAVIGATION ---
+function switchTab(tab) {
+  document.getElementById('pageInput').style.display = tab === 'input' ? 'block' : 'none';
+  document.getElementById('pageBoard').style.display = tab === 'board' ? 'block' : 'none';
+  document.getElementById('tabInput').classList.toggle('active', tab === 'input');
+  document.getElementById('tabBoard').classList.toggle('active', tab === 'board');
+  if(tab === 'board') renderBoard();
+}
+
+function openMgr() {
+  document.getElementById('pasteBox').value = state.pots[state.activePot].teams.join('\n');
+  document.getElementById('mgrSheet').classList.add('open');
+}
+
+function closeSheet(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function saveTeams() {
+  const text = document.getElementById('pasteBox').value.trim();
+  if(!text) return;
+  const newTeams = text.split('\n').map(t => t.trim()).filter(t => t);
+  
+  // Update semua pot dengan nama tim baru
+  state.pots.forEach(pot => {
+    pot.teams = [...newTeams];
+    // Sesuaikan jumlah scores dengan jumlah tim baru
+    if(pot.scores.length < newTeams.length) {
+      const diff = newTeams.length - pot.scores.length;
+      for(let i=0; i<diff; i++) pot.scores.push({placement:0, kills:0});
     }
+  });
+  
+  saveData();
+  closeSheet('mgrSheet');
+  renderInput();
+  showToast("Nama tim diperbarui!");
+}
 
-    // 2. Fungsi Kirim Update ke GitHub
-    async function updateSkor() {
-        // Update data dari input ke variabel
-        daftarTim.forEach((t, i) => {
-            const inputVal = document.getElementById(`inp-${i}`).value;
-            t.skor = parseInt(inputVal) || 0;
-        });
+function resetData() {
+  if(confirm("Hapus semua skor di POT ini? Nama tim tetap ada.")) {
+    state.pots[state.activePot].scores = state.pots[state.activePot].scores.map(()=>({placement:0, kills:0}));
+    saveData();
+    renderInput();
+  }
+}
 
-        document.getElementById('status').innerText = "Sedang mengirim ke cloud...";
+function showToast(msg = "Tersimpan!") {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2000);
+}
 
-        const contentBase64 = btoa(JSON.stringify(daftarTim, null, 2));
-        
-        try {
-            const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`, {
-                method: "PUT",
-                headers: { 
-                    "Authorization": `token ${TOKEN}`,
-                    "Content-Type": "application/json" 
-                },
-                body: JSON.stringify({
-                    message: "Update skor otomatis",
-                    content: contentBase64,
-                    sha: currentSha
-                })
-            });
-
-            if(res.ok) {
-                alert("✅ Skor berhasil diupdate untuk semua HP!");
-                loadData();
-            } else {
-                const err = await res.json();
-                alert("❌ Gagal: " + err.message);
-            }
-        } catch (e) {
-            alert("❌ Terjadi kesalahan koneksi.");
-        }
-    }
-
-    // 3. Tampilkan ke Layar
-    function render() {
-        const container = document.getElementById('leaderboard');
-        // Sortir berdasarkan skor tertinggi untuk tampilan (Visual saja)
-        const displayData = [...daftarTim].sort((a,b) => b.skor - a.skor);
-        
-        container.innerHTML = daftarTim.map((t, i) => `
-            <div class="card">
-                <span><b>${t.nama}</b></span>
-                <input type="number" id="inp-${i}" value="${t.skor}">
-            </div>
-        `).join('');
-    }
-
-    // Jalankan otomatis
-    loadData();
-    // Cek update tiap 30 detik agar HP tim lain ikut berubah
-    setInterval(loadData, 30000);
+// Start App
+init();
 </script>
 </body>
 </html>
