@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FF Tournament">
+<title>FF Tournament Online</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// Register Service Worker
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").then(r => console.log("SW registered")).catch(e => console.log("SW failed:", e));
+  });
+}
+</script>
+
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --card: #1a1a26;
+  --border: rgba(255,255,255,0.08);
+  --orange: #ff6b00;
+  --gold: #ffd700;
+  --silver: #b0b0b0;
+  --bronze: #cd7f32;
+  --green: #00e676;
+  --blue: #448aff;
+  --red: #ff5252;
+  --text: #f0f0f0;
+  --muted: rgba(240,240,240,0.45);
+  --r: 12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Barlow',sans-serif;
+  display:flex;flex-direction:column;
+  position:fixed;inset:0;overflow:hidden;
+}
+body::before{
+  content:'';position:fixed;top:-30%;left:-10%;
+  width:70vw;height:70vw;
+  background:radial-gradient(circle,rgba(255,107,0,0.07) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+/* ========== SETUP PAGE (First-time Supabase config) ========== */
+#setupPage{
+  position:fixed;inset:0;z-index:2000;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg);padding:20px;overflow-y:auto;
+}
+.setup-box{
+  width:100%;max-width:420px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:20px;padding:28px 22px;
+}
+.setup-badge{display:inline-block;background:var(--orange);color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:20px;padding:8px 16px;border-radius:10px;letter-spacing:2px;margin-bottom:10px;}
+.setup-title{font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;margin-bottom:6px;}
+.setup-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
+.step-box{background:rgba(255,107,0,0.06);border:1px solid rgba(255,107,0,0.2);border-radius:12px;padding:14px;margin-bottom:16px;}
+.step-title{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--orange);margin-bottom:8px;}
+.step-body{font-size:12px;color:var(--muted);line-height:1.7;}
+.step-body code{background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--text);font-size:11px;}
+.setup-field{margin-bottom:14px;}
+.setup-field label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:7px;}
+.setup-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:11px;color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;padding:12px 14px;outline:none;transition:border .2s;}
+.setup-input:focus{border-color:rgba(255,107,0,0.55);}
+.btn-setup{width:100%;height:50px;background:var(--orange);border:none;border-radius:12px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;cursor:pointer;margin-top:4px;}
+.setup-err{background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:12px;display:none;}
+.sql-code{background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;color:#aaa;line-height:1.6;overflow-x:auto;white-space:pre;margin-top:8px;}
+
+/* ========== LOGIN PAGE ========== */
+#loginPage{
+  position:fixed;inset:0;z-index:1000;
+  display:none;align-items:center;justify-content:center;
+  background:var(--bg);padding:20px;
+}
+.login-box{width:100%;max-width:380px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px 24px;}
+.login-logo{text-align:center;margin-bottom:24px;}
+.login-badge{display:inline-block;background:var(--orange);color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:22px;padding:10px 18px;border-radius:12px;letter-spacing:2px;margin-bottom:12px;}
+.login-title{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;margin-bottom:6px;}
+.login-sub{font-size:14px;color:var(--muted);}
+.login-field{margin-bottom:16px;}
+.login-field label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:7px;}
+.login-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:11px;color:var(--text);font-family:'Barlow',sans-serif;font-size:16px;padding:13px 15px;outline:none;transition:border .2s;}
+.login-input:focus{border-color:rgba(255,107,0,0.55);box-shadow:0 0 0 3px rgba(255,107,0,0.08);}
+.btn-login{width:100%;height:52px;background:var(--orange);border:none;border-radius:12px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;cursor:pointer;transition:opacity .15s;letter-spacing:0.5px;margin-top:4px;}
+.btn-login:active{opacity:0.85;}
+.login-err{background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:14px;display:none;}
+.login-loading{text-align:center;padding:8px 0;font-size:13px;color:var(--muted);display:none;}
+.login-reset{text-align:center;margin-top:16px;font-size:12px;color:var(--muted);}
+.login-reset span{color:rgba(255,107,0,0.7);cursor:pointer;text-decoration:underline;}
+
+/* ========== MAIN APP ========== */
+#app{display:flex;flex-direction:column;height:100%;position:relative;z-index:1;}
+.statusbar{height:env(safe-area-inset-top,0px);background:rgba(10,10,15,0.95);flex-shrink:0;position:relative;z-index:10;}
+header{flex-shrink:0;background:rgba(10,10,15,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:10;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-badge{background:var(--orange);color:#fff;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;padding:4px 9px;border-radius:7px;letter-spacing:1px;}
+.logo-text{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:600;}
+.hdr-role{font-size:11px;background:rgba(255,107,0,0.15);color:var(--orange);border:1px solid rgba(255,107,0,0.3);padding:2px 8px;border-radius:20px;font-weight:600;letter-spacing:0.5px;}
+.hdr-actions{display:flex;gap:8px;}
+.ico-btn{width:38px;height:38px;border-radius:10px;background:var(--card);border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;transition:all .15s;user-select:none;}
+.ico-btn:active{transform:scale(0.92);}
+
+/* Online/Realtime indicator */
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);display:inline-block;margin-right:6px;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.offline-dot{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;margin-right:6px;}
+
+.pot-bar{flex-shrink:0;display:flex;align-items:center;gap:0;background:rgba(10,10,15,0.97);border-bottom:1px solid var(--border);padding:0 8px;height:42px;overflow-x:auto;scrollbar-width:none;position:relative;z-index:10;}
+.pot-bar::-webkit-scrollbar{display:none;}
+.pot-label{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:0.5px;flex-shrink:0;margin-right:6px;text-transform:uppercase;}
+.pot-btn{flex-shrink:0;height:28px;min-width:36px;padding:0 9px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;cursor:pointer;margin-right:4px;transition:all .15s;user-select:none;white-space:nowrap;}
+.pot-btn.active{background:var(--orange);border-color:var(--orange);color:#fff;box-shadow:0 0 10px rgba(255,107,0,0.4);}
+.pot-btn.has-data{border-color:rgba(255,107,0,0.4);color:rgba(255,107,0,0.8);}
+.pot-add-btn{flex-shrink:0;height:28px;width:28px;border-radius:7px;border:1px dashed rgba(255,107,0,0.4);background:rgba(255,107,0,0.05);color:var(--orange);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;user-select:none;margin-right:4px;}
+.pot-add-btn:active{background:rgba(255,107,0,0.15);}
+.pot-del-btn{flex-shrink:0;height:28px;width:28px;border-radius:7px;border:1px solid rgba(255,82,82,0.25);background:rgba(255,82,82,0.05);color:rgba(255,82,82,0.7);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;user-select:none;}
+.pot-del-btn:active{background:rgba(255,82,82,0.15);}
+
+.tabs{flex-shrink:0;display:flex;background:rgba(10,10,15,0.95);border-bottom:1px solid var(--border);position:relative;z-index:9;}
+.tab{flex:1;height:44px;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;user-select:none;}
+.tab.active{color:var(--orange);border-bottom-color:var(--orange);}
+.tab-badge{background:rgba(255,107,0,0.2);color:var(--orange);font-size:11px;font-weight:700;padding:1px 6px;border-radius:10px;font-family:'Barlow',sans-serif;}
+.tab.active .tab-badge{background:var(--orange);color:#fff;}
+
+.stats{flex-shrink:0;display:flex;gap:8px;padding:10px 16px 6px;overflow-x:auto;scrollbar-width:none;position:relative;z-index:1;}
+.stats::-webkit-scrollbar{display:none;}
+.stat{flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 13px;display:flex;align-items:center;gap:8px;}
+.stat.hl{border-color:rgba(255,107,0,0.35);background:rgba(255,107,0,0.08);}
+.stat-ico{font-size:15px;}
+.stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+.stat-v{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;line-height:1;}
+.stat.hl .stat-v{color:var(--orange);}
+
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:8px 14px 20px;position:relative;z-index:1;}
+.scroll-area::-webkit-scrollbar{display:none;}
+
+/* ========== INPUT TAB ========== */
+.team-input-list{display:flex;flex-direction:column;gap:8px;}
+.ti-row{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:border-color .2s;}
+.ti-row.filled{border-color:rgba(255,107,0,0.3);}
+.ti-row.expanded{border-color:rgba(255,107,0,0.5);}
+.ti-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none;-webkit-user-select:none;}
+.ti-num{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;color:var(--muted);width:22px;flex-shrink:0;text-align:center;}
+.ti-icon{font-size:20px;flex-shrink:0;}
+.ti-name{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ti-summary{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.ti-pts{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--orange);}
+.ti-pts.zero{color:var(--muted);font-size:18px;}
+.ti-chevron{font-size:12px;color:var(--muted);transition:transform .25s;flex-shrink:0;}
+.ti-row.expanded .ti-chevron{transform:rotate(180deg);}
+.ti-mini{display:flex;gap:4px;}
+.ti-mbadge{font-size:10px;padding:2px 6px;border-radius:5px;font-weight:500;}
+.ti-mk{background:rgba(0,230,118,0.1);color:var(--green);border:1px solid rgba(0,230,118,0.2);}
+.ti-mp{background:rgba(68,138,255,0.1);color:var(--blue);border:1px solid rgba(68,138,255,0.2);}
+.ti-panel{max-height:0;overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1);background:rgba(255,107,0,0.03);border-top:0px solid var(--border);}
+.ti-row.expanded .ti-panel{max-height:300px;border-top:1px solid var(--border);}
+.ti-panel-inner{padding:14px;}
+.ti-pl-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+.pl-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:14px;}
+.pl-btn{aspect-ratio:1;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:all .12s;user-select:none;}
+.pl-btn span{font-size:8px;font-weight:400;opacity:0.5;}
+.pl-btn.on{background:linear-gradient(135deg,#ff8c00,#ff4500);border-color:#ff8c00;color:#fff;box-shadow:0 0 0 2px rgba(255,107,0,0.5),0 4px 12px rgba(255,107,0,0.4);transform:scale(1.08);z-index:1;position:relative;}
+.pl-btn.on span{opacity:1;font-weight:600;color:rgba(255,255,255,0.9);}
+.pl-btn:active{transform:scale(0.9);}
+.pl-btn.on:active{transform:scale(1.02);}
+.pl-btn.taken{background:rgba(255,82,82,0.08);border-color:rgba(255,82,82,0.25);color:rgba(255,82,82,0.5);position:relative;cursor:not-allowed;}
+.pl-btn.taken span{opacity:0.4;}
+.pl-btn.taken::after{content:'✓';position:absolute;top:2px;right:4px;font-size:8px;color:rgba(255,82,82,0.6);font-weight:700;}
+.ti-kill-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.ti-kill-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;}
+.kill-ctrl{display:flex;align-items:center;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.kill-btn{width:40px;height:40px;border:none;background:none;color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s;user-select:none;-webkit-user-select:none;}
+.kill-btn:active{background:rgba(255,107,0,0.2);}
+.kill-val{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;min-width:38px;text-align:center;color:var(--orange);}
+.kill-val.zero{color:var(--muted);}
+.ti-pv{display:flex;align-items:center;justify-content:space-between;background:rgba(255,107,0,0.07);border:1px solid rgba(255,107,0,0.2);border-radius:10px;padding:10px 14px;margin-bottom:12px;}
+.ti-pv-left{font-size:13px;color:var(--muted);}
+.ti-pv-formula{font-size:12px;color:var(--muted);}
+.ti-pv-total{font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:var(--orange);}
+.btn-save-row{display:flex;gap:8px;}
+.btn-simpan{flex:1;height:42px;background:var(--orange);border:none;border-radius:10px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .12s;}
+.btn-simpan:active{opacity:0.85;}
+.btn-clear-row{width:42px;height:42px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;}
+.btn-clear-row:active{color:var(--red);border-color:rgba(255,82,82,0.4);}
+.kill-quick{display:flex;gap:5px;margin-top:8px;}
+.kq-btn{flex:1;height:34px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all .12s;user-select:none;-webkit-user-select:none;}
+.kq-btn:active{background:rgba(255,107,0,0.2);border-color:var(--orange);color:var(--orange);}
+
+/* ========== LEADERBOARD ========== */
+.team-list{display:flex;flex-direction:column;gap:8px;}
+.tcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px;position:relative;overflow:hidden;animation:fadeUp .3s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+.tcard.r1{border-color:rgba(255,215,0,0.28);}
+.tcard.r1::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold) 40%,transparent);}
+.tcard-top{display:flex;align-items:center;gap:10px;}
+.rbadge{width:40px;height:40px;border-radius:10px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;color:var(--muted);flex-shrink:0;}
+.rbadge.g{background:rgba(255,215,0,0.12);color:var(--gold);font-size:22px;}
+.rbadge.s{background:rgba(192,192,192,0.12);color:var(--silver);font-size:22px;}
+.rbadge.b{background:rgba(205,127,50,0.12);color:var(--bronze);font-size:22px;}
+.tinfo{flex:1;min-width:0;}
+.tname{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tmeta{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;}
+.mbadge{font-size:11px;padding:2px 7px;border-radius:5px;font-weight:500;}
+.mk{background:rgba(0,230,118,0.1);color:var(--green);border:1px solid rgba(0,230,118,0.2);}
+.mp{background:rgba(68,138,255,0.1);color:var(--blue);border:1px solid rgba(68,138,255,0.2);}
+.ttotal{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:var(--orange);flex-shrink:0;}
+.tcard.r1 .ttotal{color:var(--gold);}
+.pbar{height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin:10px 0 8px;}
+.pfill{height:100%;border-radius:2px;background:var(--orange);transition:width .6s cubic-bezier(.34,1.56,.64,1);}
+.tcard.r1 .pfill{background:linear-gradient(90deg,var(--orange),var(--gold));}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:55vh;gap:14px;text-align:center;}
+.empty-ico{font-size:64px;opacity:0.15;animation:pulse 3s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+.empty h3{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:600;color:var(--muted);}
+.empty p{font-size:14px;color:var(--muted);opacity:0.6;}
+
+/* ========== BOTTOM SHEET ========== */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.sheet{background:var(--card);border-radius:20px 20px 0 0;border-top:1px solid rgba(255,255,255,0.1);padding:0 20px calc(env(safe-area-inset-bottom,0px) + 28px);width:100%;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,.72,0,1);max-height:93vh;overflow-y:auto;}
+.overlay.open .sheet{transform:translateY(0);}
+.sheet-handle{width:38px;height:4px;background:rgba(255,255,255,0.18);border-radius:2px;margin:14px auto 20px;}
+.sheet-title{font-family:'Rajdhani',sans-serif;font-size:23px;font-weight:700;margin-bottom:20px;}
+.bsave{width:100%;height:54px;background:var(--orange);border:none;border-radius:13px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;cursor:pointer;transition:opacity .15s;letter-spacing:0.3px;}
+.bsave:active{opacity:0.85;transform:scale(0.98);}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:7px;}
+.finput{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:11px;color:var(--text);font-family:'Barlow',sans-serif;font-size:16px;padding:13px 15px;outline:none;transition:border .2s;}
+.finput:focus{border-color:rgba(255,107,0,0.55);box-shadow:0 0 0 3px rgba(255,107,0,0.08);}
+.mgr-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+.mgr-item{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+.mgr-num{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--muted);width:20px;text-align:center;flex-shrink:0;}
+.mgr-icon-input{font-size:22px;width:32px;text-align:center;flex-shrink:0;cursor:pointer;}
+.mgr-name-input{flex:1;background:none;border:none;color:var(--text);font-family:'Barlow',sans-serif;font-size:15px;outline:none;min-width:0;}
+.mgr-name-input::placeholder{color:var(--muted);}
+.ptbl{width:100%;border-collapse:collapse;}
+.ptbl tr{border-bottom:1px solid var(--border);}
+.ptbl tr:last-child{border-bottom:none;}
+.ptbl td{padding:10px 8px;font-size:14px;}
+.ptbl .rc{width:32px;text-align:center;font-size:17px;}
+.ptbl .nc{color:var(--muted);}
+.ptbl .vc{text-align:right;}
+.ppill{display:inline-block;padding:3px 10px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;}
+.ppill.y{background:rgba(255,107,0,0.13);color:var(--orange);}
+.ppill.n{background:rgba(255,255,255,0.05);color:var(--muted);}
+.paste-box{width:100%;min-height:120px;background:var(--surface);border:1px dashed rgba(255,107,0,0.4);border-radius:11px;color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;padding:12px 14px;outline:none;resize:none;transition:border .2s;line-height:1.7;}
+.paste-box:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,107,0,0.1);}
+.paste-box::placeholder{color:var(--muted);font-size:13px;}
+.paste-hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5;opacity:0.8;}
+.paste-preview{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 4px;min-height:28px;}
+.paste-chip{background:rgba(255,107,0,0.1);border:1px solid rgba(255,107,0,0.25);border-radius:6px;padding:3px 10px;font-size:12px;color:var(--orange);font-family:'Rajdhani',sans-serif;font-weight:600;}
+.paste-chip.over{background:rgba(255,82,82,0.1);border-color:rgba(255,82,82,0.3);color:var(--red);}
+.btn-paste-apply{width:100%;height:44px;background:rgba(255,107,0,0.12);border:1px solid rgba(255,107,0,0.35);border-radius:10px;color:var(--orange);font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:14px;transition:all .15s;}
+.btn-paste-apply:active{background:rgba(255,107,0,0.25);}
+.mgr-divider{display:flex;align-items:center;gap:10px;margin:14px 0 12px;}
+.mgr-divider span{font-size:11px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:0.5px;}
+.mgr-divider::before,.mgr-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* Loading overlay */
+.loading-overlay{position:fixed;inset:0;background:rgba(10,10,15,0.85);z-index:500;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+.loading-overlay.show{display:flex;}
+.spinner{width:40px;height:40px;border:3px solid rgba(255,107,0,0.2);border-top-color:var(--orange);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-family:'Rajdhani',sans-serif;font-size:16px;color:var(--muted);}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);left:50%;transform:translateX(-50%) translateY(16px);background:#1a2a1a;border:1px solid rgba(0,230,118,0.3);color:var(--green);padding:11px 22px;border-radius:100px;font-size:14px;opacity:0;pointer-events:none;transition:all .3s;white-space:nowrap;z-index:600;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.err{background:#2a1a1a;border-color:rgba(255,82,82,0.3);color:var(--red);}
+
+/* Sync indicator */
+.sync-bar{flex-shrink:0;background:rgba(255,107,0,0.08);border-bottom:1px solid rgba(255,107,0,0.2);padding:6px 16px;display:none;align-items:center;gap:8px;font-size:12px;color:var(--orange);}
+.sync-bar.show{display:flex;}
+
+/* Realtime bar */
+.realtime-bar{flex-shrink:0;background:rgba(0,230,118,0.06);border-bottom:1px solid rgba(0,230,118,0.15);padding:5px 16px;display:none;align-items:center;justify-content:space-between;font-size:12px;color:var(--green);}
+.realtime-bar.show{display:flex;}
+
+/* Viewer notice */
+.viewer-notice{background:rgba(68,138,255,0.08);border-bottom:1px solid rgba(68,138,255,0.2);padding:6px 16px;font-size:12px;color:var(--blue);flex-shrink:0;display:none;align-items:center;gap:6px;}
+.viewer-notice.show{display:flex;}
+
+/* PW fields */
+.pw-field{margin-bottom:14px;}
+.pw-field label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:7px;}
+
+/* Disabled state for viewer */
+.viewer-disabled{pointer-events:none;opacity:0.4;}
+</style>
+</head>
+<body>
+
+<!-- ====== SETUP PAGE ====== -->
+<div id="setupPage">
+  <div class="setup-box">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div class="setup-badge">FF</div>
+      <div class="setup-title">Setup Tournament</div>
+      <div class="setup-sub">Masukkan konfigurasi Supabase untuk menyimpan data tournament secara real-time dan bisa diakses semua tim.</div>
+    </div>
+
+    <div class="step-box">
+      <div class="step-title">📋 Langkah Setup (sekali saja)</div>
+      <div class="step-body">
+        1. Buka <code>supabase.com</code> → buat akun gratis<br>
+        2. Buat <b>Project</b> baru (nama bebas)<br>
+        3. Masuk ke <b>SQL Editor</b> → jalankan query di bawah:<br>
+      </div>
+      <div class="sql-code">-- Buat tabel tournament
+CREATE TABLE ff_tournament (
+  id TEXT PRIMARY KEY DEFAULT 'main',
+  data JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Buat tabel auth
+CREATE TABLE ff_auth (
+  id TEXT PRIMARY KEY DEFAULT 'main',
+  data JSONB NOT NULL
+);
+
+-- Insert data awal
+INSERT INTO ff_tournament (id, data)
+VALUES ('main', '{"pots":[],"curPot":0}')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO ff_auth (id, data)
+VALUES ('main', '{"admin":{"password":"admin123"},"viewer":{"password":"lihat123"}}')
+ON CONFLICT DO NOTHING;
+
+-- Enable Row Level Security (public read/write)
+ALTER TABLE ff_tournament ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ff_auth ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public" ON ff_tournament FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "public" ON ff_auth FOR ALL USING (true) WITH CHECK (true);</div>
+      <div class="step-body" style="margin-top:10px;">
+        4. Masuk ke <b>Settings → API</b><br>
+        5. Copy <b>Project URL</b> dan <b>anon/public key</b><br>
+        6. Paste di form di bawah
+      </div>
+    </div>
+
+    <div class="setup-err" id="setupErr"></div>
+
+    <div class="setup-field">
+      <label>Supabase Project URL</label>
+      <input class="setup-input" type="url" id="sbUrl" placeholder="https://xxxxx.supabase.co" autocomplete="off">
+    </div>
+    <div class="setup-field">
+      <label>Supabase Anon Key</label>
+      <input class="setup-input" type="text" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off">
+    </div>
+
+    <button class="btn-setup" onclick="saveSetup()">🚀 Mulai Tournament</button>
+  </div>
+</div>
+
+<!-- ====== LOGIN PAGE ====== -->
+<div id="loginPage">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-badge">FF</div>
+      <div class="login-title">Tournament Online</div>
+      <div class="login-sub">Login untuk akses bersama tim</div>
+    </div>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-loading" id="loginLoading">⏳ Memeriksa akun...</div>
+    <div class="login-field">
+      <label>USERNAME</label>
+      <input class="login-input" type="text" id="loginUser" placeholder="admin / viewer" autocomplete="off" autocapitalize="none">
+    </div>
+    <div class="login-field">
+      <label>PASSWORD</label>
+      <input class="login-input" type="password" id="loginPass" placeholder="Masukkan password">
+    </div>
+    <button class="btn-login" onclick="doLogin()">Masuk</button>
+    <div class="login-reset">
+      <span onclick="resetSetup()">Ganti koneksi Supabase</span>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MAIN APP ====== -->
+<div id="app" style="display:none">
+  <div class="statusbar"></div>
+
+  <header>
+    <div class="logo">
+      <div class="logo-badge">FF</div>
+      <div class="logo-text">Tournament</div>
+      <span class="hdr-role" id="hdrRole">ADMIN</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div class="hdr-actions">
+        <div class="ico-btn" onclick="openPts()" title="Tabel Poin">📊</div>
+        <div class="ico-btn" id="btnMgr" onclick="openMgr()" title="Atur Tim">⚙️</div>
+        <div class="ico-btn" id="btnReset" onclick="confirmReset()" style="display:none" title="Reset">🔄</div>
+        <div class="ico-btn" onclick="openProfile()" title="Profil">👤</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="viewer-notice" id="viewerNotice">
+    👁️ Mode Viewer — update otomatis setiap 5 detik
+  </div>
+
+  <div class="realtime-bar" id="realtimeBar">
+    <div><span class="online-dot"></span>Realtime aktif</div>
+    <div id="lastUpdate" style="color:var(--muted);"></div>
+  </div>
+
+  <div class="sync-bar" id="syncBar">
+    <div class="spinner" style="width:14px;height:14px;border-width:2px;"></div>
+    Menyimpan ke Supabase...
+  </div>
+
+  <div class="pot-bar" id="potBar"></div>
+
+  <div class="tabs">
+    <div class="tab active" id="tabInput" onclick="switchTab('input')">
+      ✏️ Input <span class="tab-badge" id="badgeInput">0</span>
+    </div>
+    <div class="tab" id="tabBoard" onclick="switchTab('board')">
+      🏆 Leaderboard <span class="tab-badge" id="badgeBoard">0</span>
+    </div>
+  </div>
+
+  <div class="stats" id="statsBar" style="display:none">
+    <div class="stat"><div class="stat-ico">👥</div><div><div class="stat-lbl">Tim</div><div class="stat-v" id="sTeams">0</div></div></div>
+    <div class="stat"><div class="stat-ico">🔫</div><div><div class="stat-lbl">Total Kill</div><div class="stat-v" id="sKills">0</div></div></div>
+    <div class="stat hl"><div class="stat-ico">🏆</div><div><div class="stat-lbl">Top Poin</div><div class="stat-v" id="sTop">0</div></div></div>
+  </div>
+
+  <!-- INPUT TAB -->
+  <div class="scroll-area" id="pageInput">
+    <div class="team-input-list" id="tiList"></div>
+  </div>
+
+  <!-- LEADERBOARD TAB -->
+  <div class="scroll-area" id="pageBoard" style="display:none">
+    <div id="empty" class="empty">
+      <div class="empty-ico">🏆</div>
+      <h3>Belum ada data</h3>
+      <p>Input kill &amp; placement di tab Input dulu</p>
+    </div>
+    <div id="tlist" class="team-list"></div>
+  </div>
+</div>
+
+<!-- TEAM MANAGER SHEET -->
+<div class="overlay" id="mgrSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">⚙️ Atur Nama Tim</div>
+    <div style="background:rgba(255,107,0,0.05);border:1px solid rgba(255,107,0,0.15);border-radius:12px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:12px;color:var(--orange);font-weight:600;margin-bottom:8px;letter-spacing:0.3px;">📋 PASTE SEKALIGUS dari Spreadsheet</div>
+      <textarea class="paste-box" id="pasteBox"
+        placeholder="Copy dari Excel/Sheets lalu paste di sini&#10;&#10;Contoh:&#10;Kampung Ayam&#10;Patimura&#10;Aether Soloraya&#10;..."></textarea>
+      <div class="paste-hint">✅ 1 nama per baris · nomor/spasi awal otomatis dibersihkan</div>
+      <div class="paste-preview" id="pastePreview"></div>
+      <button class="btn-paste-apply" id="btnPasteApply" onclick="applyPaste()" style="display:none">⚡ Terapkan</button>
+    </div>
+    <div class="mgr-divider"><span>atau edit satu per satu</span></div>
+    <div class="mgr-list" id="mgrList"></div>
+    <button class="bsave" onclick="saveMgr()">💾 Simpan Nama Tim</button>
+  </div>
+</div>
+
+<!-- POINTS TABLE SHEET -->
+<div class="overlay" id="ptsSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Tabel Poin Placement</div>
+    <table class="ptbl">
+      <tbody>
+        <tr><td class="rc">🥇</td><td class="nc">#1 — Juara 1</td><td class="vc"><span class="ppill y">12 poin</span></td></tr>
+        <tr><td class="rc">🥈</td><td class="nc">#2 — Juara 2</td><td class="vc"><span class="ppill y">9 poin</span></td></tr>
+        <tr><td class="rc">🥉</td><td class="nc">#3 — Juara 3</td><td class="vc"><span class="ppill y">8 poin</span></td></tr>
+        <tr><td class="rc"></td><td class="nc">#4</td><td class="vc"><span class="ppill y">7 poin</span></td></tr>
+        <tr><td class="rc"></td><td class="nc">#5</td><td class="vc"><span class="ppill y">6 poin</span></td></tr>
+        <tr><td class="rc"></td><td class="nc">#6</td><td class="vc"><span class="ppill y">5 poin</span></td></tr>
+        <tr><td class="rc"></td><td class="nc">#7</td><td class="vc"><span class="ppill y">4 poin</span></td></tr>
+        <tr><td class="rc"></td><td class="nc">#8</td><td class="vc"><span class="ppill y">3 poin</span></td></tr>
+        <tr><td class="rc"></td><td class="nc">#9</td><td class="vc"><span class="ppill y">2 poin</span></td></tr>
+        <tr><td class="rc"></td><td class="nc">#10</td><td class="vc"><span class="ppill y">1 poin</span></td></tr>
+        <tr><td class="rc"></td><td class="nc">#11 – #12</td><td class="vc"><span class="ppill n">0 poin</span></td></tr>
+      </tbody>
+    </table>
+    <div style="background:rgba(0,230,118,0.07);border:1px solid rgba(0,230,118,0.2);border-radius:10px;padding:12px 14px;margin-top:12px;font-size:13px;color:var(--green);display:flex;align-items:center;gap:8px;">
+      🔫 <span>Setiap <b>1 kill</b> = <b>1 poin</b> tambahan</span>
+    </div>
+    <button class="bsave" style="margin-top:14px;background:var(--surface);border:1px solid var(--border);color:var(--muted);" onclick="closeSheet('ptsSheet')">Tutup</button>
+  </div>
+</div>
+
+<!-- DELETE POT SHEET -->
+<div class="overlay" id="delPotSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" style="color:#ff5252">Hapus <span id="delPotLabel"></span>?</div>
+    <p style="font-size:15px;color:var(--muted);line-height:1.5;">Semua data tim &amp; skor di POT ini akan dihapus permanen.</p>
+    <div style="display:flex;gap:8px;margin-top:20px;">
+      <button onclick="closeSheet('delPotSheet')" style="flex:1;height:50px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Barlow',sans-serif;font-size:15px;cursor:pointer;">Batal</button>
+      <button onclick="confirmDeletePot()" style="flex:1;height:50px;background:rgba(255,82,82,0.12);border:1px solid rgba(255,82,82,0.3);border-radius:12px;color:#ff5252;font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;cursor:pointer;">Hapus POT</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET SHEET -->
+<div class="overlay" id="resetSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" style="color:#ff5252">Reset POT ini?</div>
+    <p style="font-size:15px;color:var(--muted);line-height:1.5;">Semua data kill &amp; placement akan dihapus. Nama tim tetap tersimpan.</p>
+    <div style="display:flex;gap:8px;margin-top:20px;">
+      <button onclick="closeSheet('resetSheet')" style="flex:1;height:50px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Barlow',sans-serif;font-size:15px;cursor:pointer;">Batal</button>
+      <button onclick="doReset()" style="flex:1;height:50px;background:rgba(255,82,82,0.12);border:1px solid rgba(255,82,82,0.3);border-radius:12px;color:#ff5252;font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;cursor:pointer;">Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE SHEET -->
+<div class="overlay" id="profileSheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">👤 Profil</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">Login sebagai</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;" id="profileUsername">—</div>
+      <div style="margin-top:6px;" id="profileRoleBadge"></div>
+    </div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;margin-bottom:16px;">🔑 Ganti Password</div>
+    <div class="pw-field"><label>Password Lama</label><input class="finput" type="password" id="pwOld" placeholder="Masukkan password lama"></div>
+    <div class="pw-field"><label>Password Baru</label><input class="finput" type="password" id="pwNew" placeholder="Masukkan password baru"></div>
+    <div class="pw-field"><label>Konfirmasi Password Baru</label><input class="finput" type="password" id="pwConfirm" placeholder="Ulangi password baru"></div>
+    <div id="pwErr" style="background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:14px;display:none;"></div>
+    <button class="bsave" id="btnChangePw" onclick="changePassword()" style="margin-bottom:12px;">🔑 Ganti Password</button>
+    <button onclick="doLogout()" style="width:100%;height:50px;background:rgba(255,82,82,0.08);border:1px solid rgba(255,82,82,0.25);border-radius:13px;color:var(--red);font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;cursor:pointer;">🚪 Logout</button>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Memuat data...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// SUPABASE SETUP
+// ============================================================
+const CFG_KEY = 'ff_supabase_config';
+let supabase = null;
+let realtimeChannel = null;
+
+function loadConfig() {
+  try {
+    const s = localStorage.getItem(CFG_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch(e) { return null; }
+}
+
+function saveConfig(url, key) {
+  localStorage.setItem(CFG_KEY, JSON.stringify({ url, key }));
+}
+
+function resetSetup() {
+  if (confirm('Reset konfigurasi Supabase? Kamu perlu input ulang URL dan key.')) {
+    localStorage.removeItem(CFG_KEY);
+    sessionStorage.clear();
+    location.reload();
+  }
+}
+
+async function saveSetup() {
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  const errEl = document.getElementById('setupErr');
+  errEl.style.display = 'none';
+
+  if (!url || !key) {
+    errEl.textContent = 'URL dan Key harus diisi!';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!url.includes('supabase.co')) {
+    errEl.textContent = 'URL tidak valid. Format: https://xxxxx.supabase.co';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    // Test connection
+    const testClient = window.supabase.createClient(url, key);
+    const { data, error } = await testClient.from('ff_tournament').select('id').limit(1);
+    if (error) throw new Error(error.message);
+
+    saveConfig(url, key);
+    document.getElementById('setupPage').style.display = 'none';
+    document.getElementById('loginPage').style.display = 'flex';
+    initSupabase(url, key);
+    showToast('✅ Koneksi berhasil!');
+  } catch(e) {
+    errEl.textContent = 'Gagal konek: ' + e.message + '\n\nPastikan SQL sudah dijalankan dan URL/Key benar.';
+    errEl.style.display = 'block';
+  }
+}
+
+function initSupabase(url, key) {
+  supabase = window.supabase.createClient(url, key);
+}
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+const PL = [0,12,9,8,7,6,5,4,3,2,1,0,0,0,0,0];
+const ICONS = ['🦁','⚡','👑','🔥','🤖','🦊','🎮','🐉','⚔️','📄','🦅','🌀','🌊','🎯','💎'];
+const MAX_POTS = 12;
+const MIN_TEAMS = 12;
+const MAX_TEAMS = 15;
+const SESSION_KEY = 'ff_session';
+
+// ============================================================
+// APP STATE
+// ============================================================
+let currentUser = null;
+let pots = [];
+let curPot = 0;
+let expanded = null;
+let curTab = 'input';
+let syncTimer = null;
+let autoRefreshTimer = null;
+
+function defaultPots() {
+  return [{
+    teams: Array.from({length:12},(_,i)=>({name:`Tim ${i+1}`,icon:ICONS[i%ICONS.length]})),
+    scores: Array.from({length:12},()=>({placement:null,kills:0}))
+  }];
+}
+
+// ============================================================
+// SUPABASE DATA OPERATIONS
+// ============================================================
+async function loadFromCloud() {
+  try {
+    const { data, error } = await supabase
+      .from('ff_tournament')
+      .select('data')
+      .eq('id', 'main')
+      .single();
+
+    if (error) throw error;
+    if (data && data.data) {
+      const d = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+      pots = d.pots && d.pots.length ? d.pots : defaultPots();
+      curPot = d.curPot || 0;
+      if (curPot >= pots.length) curPot = 0;
+      return true;
+    }
+  } catch(e) {
+    console.error('Load failed:', e);
+  }
+  pots = defaultPots();
+  curPot = 0;
+  return false;
+}
+
+async function saveToCloud() {
+  if (!isAdmin()) return;
+  try {
+    showSyncBar(true);
+    const { error } = await supabase
+      .from('ff_tournament')
+      .upsert({ id: 'main', data: { pots, curPot }, updated_at: new Date().toISOString() });
+    if (error) throw error;
+    showSyncBar(false);
+    updateLastUpdate();
+  } catch(e) {
+    console.error('Save failed:', e);
+    showSyncBar(false);
+    showToast('⚠️ Gagal simpan!', true);
+  }
+}
+
+async function loadAuth() {
+  try {
+    const { data, error } = await supabase
+      .from('ff_auth')
+      .select('data')
+      .eq('id', 'main')
+      .single();
+    if (error) throw error;
+    const d = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+    return d;
+  } catch(e) {
+    return { admin: { password: 'admin123' }, viewer: { password: 'lihat123' } };
+  }
+}
+
+async function saveAuth(authData) {
+  try {
+    const { error } = await supabase
+      .from('ff_auth')
+      .upsert({ id: 'main', data: authData });
+    if (error) throw error;
+  } catch(e) {
+    console.error('Save auth failed:', e);
+    throw e;
+  }
+}
+
+// ============================================================
+// REALTIME SUBSCRIPTION
+// ============================================================
+function setupRealtime() {
+  if (realtimeChannel) {
+    supabase.removeChannel(realtimeChannel);
+  }
+
+  realtimeChannel = supabase
+    .channel('ff_tournament_changes')
+    .on('postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'ff_tournament' },
+      async (payload) => {
+        // Only refresh for viewers or if not actively editing
+        if (!isAdmin() || curTab === 'board') {
+          await loadFromCloud();
+          if (curTab === 'board') renderBoard();
+          else { renderPotBar(); renderInput(); }
+          updateLastUpdate();
+          if (!isAdmin()) showToast('🔄 Data diperbarui!');
+        }
+      }
+    )
+    .subscribe();
+
+  document.getElementById('realtimeBar').classList.add('show');
+}
+
+function updateLastUpdate() {
+  const el = document.getElementById('lastUpdate');
+  if (el) {
+    const now = new Date();
+    el.textContent = `Update: ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+  }
+}
+
+// ============================================================
+// SESSION MANAGEMENT
+// ============================================================
+function saveSession(user) {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
+}
+function loadSession() {
+  try {
+    const s = sessionStorage.getItem(SESSION_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch(e) { return null; }
+}
+function clearSession() {
+  sessionStorage.removeItem(SESSION_KEY);
+}
+
+// ============================================================
+// LOGIN / LOGOUT
+// ============================================================
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim().toLowerCase();
+  const password = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginErr');
+  const loadEl = document.getElementById('loginLoading');
+  errEl.style.display = 'none';
+
+  if (!username || !password) {
+    errEl.textContent = 'Username dan password harus diisi!';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (username !== 'admin' && username !== 'viewer') {
+    errEl.textContent = 'Username tidak ditemukan! Gunakan: admin / viewer';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  loadEl.style.display = 'block';
+  try {
+    const authData = await loadAuth();
+    const userAuth = authData[username];
+    if (!userAuth || userAuth.password !== password) {
+      errEl.textContent = 'Password salah!';
+      errEl.style.display = 'block';
+      loadEl.style.display = 'none';
+      return;
+    }
+
+    currentUser = { username, role: username === 'admin' ? 'ADMIN' : 'VIEWER' };
+    saveSession(currentUser);
+    loadEl.style.display = 'none';
+    await initApp();
+  } catch(e) {
+    errEl.textContent = 'Error: ' + e.message;
+    errEl.style.display = 'block';
+    loadEl.style.display = 'none';
+  }
+}
+
+function doLogout() {
+  clearSession();
+  currentUser = null;
+  if (realtimeChannel) { supabase.removeChannel(realtimeChannel); realtimeChannel = null; }
+  if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+  closeSheet('profileSheet');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+}
+
+// ============================================================
+// CHANGE PASSWORD
+// ============================================================
+async function changePassword() {
+  const oldPw = document.getElementById('pwOld').value;
+  const newPw = document.getElementById('pwNew').value;
+  const confPw = document.getElementById('pwConfirm').value;
+  const errEl = document.getElementById('pwErr');
+  errEl.style.display = 'none';
+
+  if (!oldPw || !newPw || !confPw) { errEl.textContent='Semua field harus diisi!'; errEl.style.display='block'; return; }
+  if (newPw !== confPw) { errEl.textContent='Password baru tidak sama!'; errEl.style.display='block'; return; }
+  if (newPw.length < 4) { errEl.textContent='Password minimal 4 karakter!'; errEl.style.display='block'; return; }
+
+  showLoading('Menyimpan password...');
+  try {
+    const authData = await loadAuth();
+    if (authData[currentUser.username].password !== oldPw) {
+      hideLoading(); errEl.textContent='Password lama salah!'; errEl.style.display='block'; return;
+    }
+    authData[currentUser.username].password = newPw;
+    await saveAuth(authData);
+    hideLoading();
+    document.getElementById('pwOld').value='';
+    document.getElementById('pwNew').value='';
+    document.getElementById('pwConfirm').value='';
+    closeSheet('profileSheet');
+    showToast('✅ Password berhasil diganti!');
+  } catch(e) {
+    hideLoading(); errEl.textContent='Error: '+e.message; errEl.style.display='block';
+  }
+}
+
+// ============================================================
+// INIT APP
+// ============================================================
+async function initApp() {
+  showLoading('Memuat data tournament...');
+  await loadFromCloud();
+  hideLoading();
+
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+
+  const admin = currentUser.role === 'ADMIN';
+  document.getElementById('hdrRole').textContent = currentUser.role;
+  document.getElementById('viewerNotice').classList.toggle('show', !admin);
+  document.getElementById('btnMgr').style.display = admin ? 'flex' : 'none';
+  document.getElementById('tabInput').style.display = admin ? 'flex' : 'none';
+
+  if (!admin) curTab = 'board';
+
+  setupRealtime();
+  renderPotBar();
+
+  if (admin) {
+    renderInput();
+  } else {
+    switchTab('board');
+    // Fallback polling for viewer (5s)
+    autoRefreshTimer = setInterval(async () => {
+      await loadFromCloud();
+      renderBoard();
+      updateLastUpdate();
+    }, 5000);
+  }
+}
+
+// ============================================================
+// PROFILE SHEET
+// ============================================================
+function openProfile() {
+  document.getElementById('profileUsername').textContent = currentUser.username;
+  document.getElementById('profileRoleBadge').innerHTML =
+    `<span style="font-size:12px;background:rgba(255,107,0,0.15);color:var(--orange);border:1px solid rgba(255,107,0,0.3);padding:3px 10px;border-radius:20px;font-weight:600;">${currentUser.role}</span>`;
+  document.getElementById('pwOld').value='';
+  document.getElementById('pwNew').value='';
+  document.getElementById('pwConfirm').value='';
+  document.getElementById('pwErr').style.display='none';
+  document.getElementById('profileSheet').classList.add('open');
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function curTeams()  { return pots[curPot].teams; }
+function curScores() { return pots[curPot].scores; }
+function numTeams()  { return curTeams().length; }
+
+function pts(i) {
+  const s = curScores()[i];
+  if (s.placement === null) return null;
+  return (PL[s.placement]||0) + (parseInt(s.kills)||0);
+}
+function hasAnyData() {
+  return curScores().some(s => s.placement !== null || s.kills > 0);
+}
+function filledCount() {
+  return curScores().filter(s => s.placement !== null).length;
+}
+function isAdmin() { return currentUser?.role === 'ADMIN'; }
+
+function debounceSave() {
+  if (!isAdmin()) return;
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(saveToCloud, 1500);
+}
+
+// ============================================================
+// POT MANAGEMENT
+// ============================================================
+function addPot() {
+  if (!isAdmin()) return;
+  if (pots.length >= MAX_POTS) { showToast('⚠️ Maksimal 12 POT!', true); return; }
+  pots.push({
+    teams: Array.from({length:12},(_,i)=>({name:`Tim ${i+1}`,icon:ICONS[i%ICONS.length]})),
+    scores: Array.from({length:12},()=>({placement:null,kills:0}))
+  });
+  curPot = pots.length - 1;
+  expanded = null;
+  debounceSave();
+  renderPotBar();
+  renderInput();
+}
+
+function switchPot(idx) {
+  curPot = idx;
+  expanded = null;
+  renderPotBar();
+  if (curTab === 'input') renderInput();
+  else renderBoard();
+}
+
+function deleteCurPot() {
+  if (!isAdmin()) return;
+  if (pots.length === 1) { showToast('⚠️ Minimal 1 POT!', true); return; }
+  const lbl = document.getElementById('delPotLabel');
+  if (lbl) lbl.textContent = `POT ${curPot+1}`;
+  document.getElementById('delPotSheet').classList.add('open');
+}
+
+function confirmDeletePot() {
+  pots.splice(curPot, 1);
+  curPot = Math.min(curPot, pots.length - 1);
+  expanded = null;
+  debounceSave();
+  closeSheet('delPotSheet');
+  renderPotBar();
+  renderInput();
+  showToast('🗑 POT dihapus');
+}
+
+function renderPotBar() {
+  const bar = document.getElementById('potBar');
+  let html = '<span class="pot-label">POT</span>';
+  pots.forEach((p, i) => {
+    const isActive = i === curPot;
+    const hasData  = p.scores.some(s => s.placement !== null || s.kills > 0);
+    let cls = 'pot-btn';
+    if (isActive) cls += ' active';
+    else if (hasData) cls += ' has-data';
+    html += `<button class="${cls}" onclick="switchPot(${i})">POT ${i+1}</button>`;
+  });
+  if (isAdmin() && pots.length < MAX_POTS) {
+    html += `<button class="pot-add-btn" onclick="addPot()" title="Tambah POT">+</button>`;
+  }
+  if (isAdmin()) {
+    html += `<button class="pot-del-btn" onclick="deleteCurPot()" title="Hapus POT ini">✕</button>`;
+  }
+  bar.innerHTML = html;
+}
+
+// ============================================================
+// TEAM COUNT
+// ============================================================
+function changeTeamCount(delta) {
+  if (!isAdmin()) return;
+  const p = pots[curPot];
+  const cur = p.teams.length;
+  const next = cur + delta;
+  if (next < MIN_TEAMS) { showToast(`⚠️ Minimal ${MIN_TEAMS} tim!`, true); return; }
+  if (next > MAX_TEAMS) { showToast(`⚠️ Maksimal ${MAX_TEAMS} tim!`, true); return; }
+  if (delta > 0) {
+    for (let i = 0; i < delta; i++) {
+      p.teams.push({name:`Tim ${cur+i+1}`,icon:ICONS[(cur+i)%ICONS.length]});
+      p.scores.push({placement:null,kills:0});
+    }
+  } else {
+    p.teams.splice(next);
+    p.scores.splice(next);
+  }
+  expanded = null;
+  debounceSave();
+  renderInput();
+  showToast(`✅ Jumlah tim: ${next}`);
+}
+
+// ============================================================
+// RENDER INPUT TAB
+// ============================================================
+function renderInput() {
+  const el = document.getElementById('tiList');
+  const fc = filledCount();
+  const n  = numTeams();
+  document.getElementById('badgeInput').textContent = fc + '/' + n;
+
+  let countBar = `<div style="display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:4px;">
+    <div style="font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Tim dalam POT ${curPot+1}</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button onclick="changeTeamCount(-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+      <span style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--orange);min-width:28px;text-align:center;">${n}</span>
+      <button onclick="changeTeamCount(1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+    </div>
+  </div>`;
+
+  const teams  = curTeams();
+  const scores = curScores();
+  const takenPlacements = scores.map(s => s.placement).filter(p => p !== null);
+
+  const rows = teams.map((t, i) => {
+    const s    = scores[i];
+    const p    = pts(i);
+    const isFilled = s.placement !== null;
+    const isExpanded = expanded === i;
+    const plPts = s.placement ? (PL[s.placement]||0) : 0;
+    const showPts = p !== null ? p : (s.kills > 0 ? s.kills : null);
+
+    return `<div class="ti-row${isFilled?' filled':''}${isExpanded?' expanded':''}" id="tr-${i}">
+      <div class="ti-header" onclick="toggleExpand(${i})">
+        <div class="ti-num">${i+1}</div>
+        <div class="ti-icon">${t.icon}</div>
+        <div class="ti-name">${t.name}</div>
+        <div class="ti-summary">
+          ${isFilled ? `<div class="ti-mini">
+            <span class="ti-mbadge ti-mk">🔫${s.kills}</span>
+            <span class="ti-mbadge ti-mp">#${s.placement}</span>
+          </div>` : ''}
+          <div class="ti-pts${showPts===null?' zero':''}">${showPts !== null ? showPts : '—'}</div>
+          <div class="ti-chevron">▼</div>
+        </div>
+      </div>
+      <div class="ti-panel">
+        <div class="ti-panel-inner">
+          <div class="ti-pl-label">Placement</div>
+          <div class="pl-grid">
+            ${Array.from({length:12},(_,j)=>{
+              const n=j+1;
+              const isOn  = s.placement===n;
+              const isTaken = !isOn && takenPlacements.includes(n);
+              const ppVal = PL[n]||0;
+              return `<button class="pl-btn${isOn?' on':''}${isTaken?' taken':''}"
+                onclick="${isTaken?'':isAdmin()?`setPlacement(${i},${n})`:'return'}"
+                ${isTaken||!isAdmin()?'disabled':''}>
+                ${n}<span>${ppVal}pt</span></button>`;
+            }).join('')}
+          </div>
+          <div class="ti-kill-row">
+            <div class="ti-kill-label">Kill</div>
+            <div class="kill-ctrl">
+              <button class="kill-btn" onclick="${isAdmin()?`addKill(${i},-1)`:'return'}">−</button>
+              <div class="kill-val${s.kills===0?' zero':''}" id="kv-${i}">${s.kills}</div>
+              <button class="kill-btn" onclick="${isAdmin()?`addKill(${i},1)`:'return'}">+</button>
+            </div>
+          </div>
+          <div class="kill-quick">
+            ${[1,2,3,4,5].map(k=>`<button class="kq-btn" onclick="${isAdmin()?`addKill(${i},${k})`:'return'}">+${k}</button>`).join('')}
+          </div>
+          <div class="ti-pv" id="pv-${i}">
+            <div class="ti-pv-left">
+              <div style="font-size:12px;margin-bottom:2px;">Total Poin</div>
+              <div class="ti-pv-formula">${s.placement?`#${s.placement}=${plPts}pt`:''} ${s.kills>0?`+ 🔫${s.kills}`:''}</div>
+            </div>
+            <div class="ti-pv-total">${p !== null ? p : '—'}</div>
+          </div>
+          ${isAdmin() ? `<div class="btn-save-row">
+            <button class="btn-simpan" onclick="saveRow(${i})">💾 Simpan</button>
+            <button class="btn-clear-row" onclick="clearRow(${i})" title="Clear">✕</button>
+          </div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = countBar + rows;
+}
+
+function toggleExpand(i) {
+  expanded = expanded === i ? null : i;
+  renderInput();
+}
+
+function setPlacement(teamIdx, placement) {
+  if (!isAdmin()) return;
+  const s = curScores();
+  if (s[teamIdx].placement === placement) {
+    s[teamIdx].placement = null;
+  } else {
+    s[teamIdx].placement = placement;
+  }
+  renderInput();
+}
+
+function addKill(teamIdx, delta) {
+  if (!isAdmin()) return;
+  const s = curScores()[teamIdx];
+  s.kills = Math.max(0, (parseInt(s.kills)||0) + delta);
+  renderInput();
+}
+
+function saveRow(i) {
+  if (!isAdmin()) return;
+  debounceSave();
+  expanded = null;
+  renderInput();
+  showToast(`✅ ${curTeams()[i].name} disimpan!`);
+}
+
+function clearRow(i) {
+  if (!isAdmin()) return;
+  curScores()[i] = {placement:null, kills:0};
+  renderInput();
+  debounceSave();
+}
+
+// ============================================================
+// RENDER STATS
+// ============================================================
+function renderStats() {
+  const sc = curScores();
+  const allPts = sc.map((_,i)=>pts(i)).filter(p=>p!==null);
+  const tk = sc.reduce((a,s)=>a+(parseInt(s.kills)||0),0);
+  const filled = filledCount();
+  document.getElementById('statsBar').style.display = allPts.length ? 'flex' : 'none';
+  document.getElementById('sTeams').textContent  = filled;
+  document.getElementById('sKills').textContent  = tk;
+  document.getElementById('sTop').textContent    = allPts.length ? Math.max(...allPts) : 0;
+}
+
+// ============================================================
+// RENDER LEADERBOARD
+// ============================================================
+function renderBoard() {
+  const any = hasAnyData();
+  document.getElementById('badgeBoard').textContent = filledCount();
+  document.getElementById('empty').style.display = any ? 'none' : 'flex';
+  document.getElementById('tlist').style.display  = any ? 'flex' : 'none';
+  if (!any) return;
+
+  const teams   = curTeams();
+  const sc      = curScores();
+  const indexed = teams.map((t,i)=>({...t, idx:i, score:sc[i], total:pts(i)}))
+    .filter(x => x.total !== null)
+    .sort((a,b) => {
+      const d = b.total - a.total;
+      return d !== 0 ? d : b.score.kills - a.score.kills;
+    });
+
+  const maxP = indexed.length ? Math.max(indexed[0].total, 1) : 1;
+  const EM   = ['','🥇','🥈','🥉'];
+
+  document.getElementById('tlist').innerHTML = indexed.map((t,i) => {
+    const r = i+1, tp = t.total;
+    const rc = r<=3?['g','s','b'][r-1]:'';
+    const ri = r<=3?EM[r]:`#${r}`;
+    const pct = Math.round(tp/maxP*100);
+    const plPts = PL[t.score.placement]||0;
+    return `<div class="tcard ${r===1?'r1':''}" style="animation-delay:${i*0.04}s">
+      <div class="tcard-top">
+        <div class="rbadge ${rc}">${ri}</div>
+        <div class="tinfo">
+          <div class="tname">${t.icon} ${t.name}</div>
+          <div class="tmeta">
+            <span class="mbadge mk">🔫 ${t.score.kills} kill</span>
+            <span class="mbadge mp">#${t.score.placement} +${plPts}pt</span>
+          </div>
+        </div>
+        <div class="ttotal">${tp}</div>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  renderStats();
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(tab) {
+  curTab = tab;
+  document.getElementById('pageInput').style.display  = tab==='input'  ? 'block' : 'none';
+  document.getElementById('pageBoard').style.display  = tab==='board'  ? 'block' : 'none';
+  document.getElementById('tabInput').classList.toggle('active', tab==='input');
+  document.getElementById('tabBoard').classList.toggle('active', tab==='board');
+  if (tab === 'board') renderBoard();
+}
+
+// ============================================================
+// TEAM MANAGER
+// ============================================================
+function onPasteBoxInput() {
+  const raw = document.getElementById('pasteBox').value;
+  const lines = raw.split(/\n/).map(l=>l.replace(/^[\d]+[.\)\s\t]+/,'').trim()).filter(l=>l.length>0);
+  const preview = document.getElementById('pastePreview');
+  const btn = document.getElementById('btnPasteApply');
+  const n = numTeams();
+  if (!lines.length) { preview.innerHTML=''; btn.style.display='none'; return; }
+  preview.innerHTML = lines.slice(0,n).map((l,i)=>`<span class="paste-chip">${i+1}. ${l}</span>`).join('')
+    + (lines.length > n ? `<span class="paste-chip over">+${lines.length-n} diabaikan</span>` : '');
+  btn.style.display = 'block';
+}
+
+function applyPaste() {
+  const raw = document.getElementById('pasteBox').value;
+  const n = numTeams();
+  const lines = raw.split(/\n/).map(l=>l.replace(/^[\d]+[.\)\s\t]+/,'').trim()).filter(l=>l.length>0).slice(0,n);
+  lines.forEach((name,i) => {
+    const inp = document.getElementById(`mgr-name-${i}`);
+    if (inp) inp.value = name;
+  });
+  document.getElementById('pasteBox').value='';
+  document.getElementById('pastePreview').innerHTML='';
+  document.getElementById('btnPasteApply').style.display='none';
+  showToast(`✅ ${lines.length} nama tim diterapkan!`);
+}
+
+function openMgr() {
+  if (!isAdmin()) return;
+  const teams = curTeams();
+  document.getElementById('mgrList').innerHTML = teams.map((t,i) =>
+    `<div class="mgr-item">
+      <span class="mgr-num">${i+1}</span>
+      <span class="mgr-icon-input" onclick="cycleIcon(${i})" id="mgr-icon-${i}">${t.icon}</span>
+      <input class="mgr-name-input" type="text" value="${t.name}" placeholder="Nama tim ${i+1}" id="mgr-name-${i}" autocomplete="off">
+    </div>`).join('');
+  document.getElementById('mgrSheet').classList.add('open');
+}
+
+function cycleIcon(i) {
+  const teams = curTeams();
+  const idx = ICONS.indexOf(teams[i].icon);
+  teams[i].icon = ICONS[(idx+1) % ICONS.length];
+  document.getElementById(`mgr-icon-${i}`).textContent = teams[i].icon;
+}
+
+function saveMgr() {
+  if (!isAdmin()) return;
+  const teams = curTeams();
+  teams.forEach((t,i) => {
+    t.name = (document.getElementById(`mgr-name-${i}`)?.value||'').trim() || `Tim ${i+1}`;
+  });
+  debounceSave();
+  closeSheet('mgrSheet');
+  renderInput();
+  showToast('✅ Nama tim disimpan!');
+}
+
+// ============================================================
+// MISC
+// ============================================================
+function openPts()      { document.getElementById('ptsSheet').classList.add('open'); }
+function confirmReset() { document.getElementById('resetSheet').classList.add('open'); }
+function doReset() {
+  if (!isAdmin()) return;
+  const n = numTeams();
+  pots[curPot].scores = Array.from({length:n},()=>({placement:null,kills:0}));
+  debounceSave(); expanded=null;
+  renderInput(); closeSheet('resetSheet');
+  showToast('🔄 Data POT direset');
+}
+function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function showSyncBar(show) { document.getElementById('syncBar').classList.toggle('show', show); }
+function showLoading(text='Memuat...') {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+function showToast(msg, isErr=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr?' err':'');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+document.getElementById('pasteBox').addEventListener('input', onPasteBoxInput);
+document.getElementById('pasteBox').addEventListener('paste', ()=>setTimeout(onPasteBoxInput,10));
+document.querySelectorAll('.overlay').forEach(el=>{
+  el.addEventListener('click', e=>{ if(e.target===el) el.classList.remove('open'); });
+});
+document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
+
+// ============================================================
+// STARTUP
+// ============================================================
+(function() {
+  const cfg = loadConfig();
+  if (cfg) {
+    initSupabase(cfg.url, cfg.key);
+    document.getElementById('setupPage').style.display = 'none';
+
+    const session = loadSession();
+    if (session) {
+      currentUser = session;
+      initApp();
+    } else {
+      document.getElementById('loginPage').style.display = 'flex';
+    }
+  }
+  // else: setupPage is shown by default
+})();
+</script>
+<script>
+// Register Service Worker
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").then(r => console.log("SW registered")).catch(e => console.log("SW failed:", e));
+  });
+}
+</script>
+</body>
+</html>
