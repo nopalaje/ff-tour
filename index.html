@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FF Oslo Jaya - Secure Input</title>
+    <title>FF Oslo Jaya - Final Fix</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
     <style>
@@ -11,10 +11,10 @@
             --bg: #12121a; --surface: #1a1a26; --card: #242435;
             --orange: #ff6b00; --text: #f0f0f0; --muted: rgba(240,240,240,0.4);
             --border: rgba(255,255,255,0.08); --green: #00e676; --red: #ff4444;
-            --disabled: #333344;
+            --disabled: #2a2a35;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
         
         #login-screen { position:fixed; inset:0; background:var(--bg); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
         .login-box { width:100%; max-width:320px; background:var(--surface); padding:25px; border-radius:15px; border:1px solid var(--border); }
@@ -37,22 +37,22 @@
         .team-item.open .panel-content { display: block; }
 
         .grid-generic { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; margin-bottom: 15px; }
-        .btn-opt { padding: 10px 0; background: var(--surface); border: 1px solid var(--border); color: white; border-radius: 6px; font-family: 'Rajdhani'; font-weight: 600; cursor: pointer; font-size: 11px; }
+        .btn-opt { padding: 10px 0; background: var(--surface); border: 1px solid var(--border); color: white; border-radius: 6px; font-family: 'Rajdhani'; font-weight: 600; cursor: pointer; font-size: 11px; transition: 0.2s; }
         .btn-opt.active { background: var(--orange); border-color: var(--orange); }
-        .btn-opt.taken { background: var(--disabled); color: var(--muted); cursor: not-allowed; border: none; }
+        .btn-opt.taken { background: var(--disabled); color: rgba(255,255,255,0.1); cursor: not-allowed; border: none; }
         
         .kill-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 15px; }
-        .btn-kill-add { padding: 12px 0; background: rgba(255,107,0,0.1); border: 1px solid var(--orange); color: var(--orange); border-radius: 6px; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; font-size: 11px; }
+        .btn-kill-add { padding: 12px 0; background: rgba(255,107,0,0.1); border: 1px solid var(--orange); color: var(--orange); border-radius: 6px; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; }
         .btn-kill-reset { padding: 12px 0; background: rgba(255,68,68,0.1); border: 1px solid var(--red); color: var(--red); border-radius: 6px; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; font-size: 10px; }
         
         .kill-ctrl { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; background: var(--bg); padding: 10px; border-radius: 8px; }
         .k-btn { width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--red); background: none; color: var(--red); cursor: pointer; font-size: 20px; font-weight: 700; }
 
-        .btn-close-panel { width: 100%; background: #2a2a3a; color: white; border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-size: 11px; font-weight: 600; margin-top: 10px; cursor: pointer; }
-        .btn-delete { background: none; color: var(--red); border: 1px solid var(--red); padding: 5px; border-radius: 6px; font-size: 9px; font-weight: 700; width: fit-content; cursor: pointer; opacity: 0.5; margin-top: 15px; }
+        .btn-close-panel { width: 100%; background: var(--orange); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 12px; font-weight: 700; margin-top: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-delete { background: none; color: var(--red); border: 1px solid var(--red); padding: 6px; border-radius: 6px; font-size: 9px; font-weight: 700; width: fit-content; cursor: pointer; opacity: 0.4; margin-top: 15px; }
         
         .config-card { background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
-        .input-dark { width: 100%; background: var(--bg); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; font-size: 16px; margin-bottom: 10px; }
+        .input-dark { width: 100%; background: var(--bg); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; font-size: 16px; margin-bottom: 10px; outline: none; }
         .num-badge { font-family: 'Rajdhani'; color: var(--muted); font-size: 12px; margin-right: 15px; width: 20px; text-align: center; }
     </style>
 </head>
@@ -61,15 +61,16 @@
 <div id="login-screen">
     <div class="login-box">
         <div class="logo-text" style="font-size:28px; text-align:center; margin-bottom:20px;">FF TOURNAMENT</div>
-        <input type="password" id="admin-pass" placeholder="PASSWORD" class="input-dark" style="text-align:center;">
-        <button onclick="handleLogin()" style="width:100%; padding:12px; background:var(--orange); color:white; border:none; border-radius:8px; font-weight:700;">ADMIN LOGIN</button>
+        <input type="password" id="admin-pass" placeholder="PASSWORD ADMIN" class="input-dark" style="text-align:center;">
+        <button onclick="handleLogin('admin')" style="width:100%; padding:14px; background:var(--orange); color:white; border:none; border-radius:8px; font-weight:700; margin-bottom:12px; cursor:pointer;">LOGIN ADMIN</button>
+        <button onclick="handleLogin('guest')" style="width:100%; padding:12px; background:transparent; color:white; border:1px solid var(--border); border-radius:8px; cursor:pointer;">MODE TAMU (VIEW ONLY)</button>
     </div>
 </div>
 
 <header>
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div class="logo-text">FF TOURNAMENT</div>
-        <div id="sync-status" style="font-size: 10px; color: var(--green);">● LIVE</div>
+        <div id="sync-status" style="font-size: 10px; color: var(--green);">● CONNECTED</div>
     </div>
 </header>
 
@@ -91,14 +92,9 @@
 
 <div id="page-config" class="scroll-area" style="display:none;">
     <div class="config-card">
-        <h4 style="color:var(--orange); margin-bottom:10px; font-family:'Rajdhani';">UPDATE NAMA TIM (BULK)</h4>
-        <textarea id="raw-teams" class="input-dark" style="height: 120px;" placeholder="Tempel nama tim di sini..."></textarea>
-        <button onclick="saveBulkTeams()" style="width: 100%; background: var(--orange); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700;">UPDATE NAMA DI POT AKTIF</button>
-    </div>
-    <div class="config-card">
-        <h4 style="color:var(--orange); margin-bottom:10px; font-family:'Rajdhani';">TAMBAH TIM MANUAL</h4>
-        <input type="text" id="manual-name" class="input-dark" placeholder="Nama Tim Baru">
-        <button onclick="addTeamManual()" style="width: 100%; background: transparent; color: var(--orange); border: 1px solid var(--orange); padding: 12px; border-radius: 8px; font-weight: 700;">TAMBAH KE POT AKTIF</button>
+        <h4 style="color:var(--orange); margin-bottom:10px; font-family:'Rajdhani';">BULK UPDATE NAMA TIM</h4>
+        <textarea id="raw-teams" class="input-dark" style="height: 120px;" placeholder="Baris 1: Tim A&#10;Baris 2: Tim B"></textarea>
+        <button onclick="saveBulkTeams()" style="width: 100%; background: var(--orange); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700;">UPDATE NAMA DI POT INI</button>
     </div>
 </div>
 
@@ -111,14 +107,27 @@ const POINTS = [0, 12, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0];
 let teamData = [];
 let currentPot = 1;
 let openId = null; 
+let isAdmin = false;
 
 document.getElementById('pot-nav').innerHTML = Array.from({length: 12}, (_, i) => i + 1).map(num => `
     <button class="btn-pot-tab ${num === 1 ? 'active' : ''}" id="pot-tab-${num}" onclick="filterByPot(${num})">POT ${num}</button>
 `).join('');
 
-async function handleLogin() {
-    if (document.getElementById('admin-pass').value === 'oslojaya') {
+async function handleLogin(role) {
+    if (role === 'admin') {
+        if (document.getElementById('admin-pass').value === 'oslojaya') {
+            isAdmin = true;
+            document.getElementById('login-screen').style.display = 'none';
+            await loadData();
+        } else {
+            alert('Password Salah!');
+        }
+    } else {
+        isAdmin = false;
         document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('tab-input').style.display = 'none';
+        document.getElementById('tab-config').style.display = 'none';
+        switchMainPage('board');
         await loadData();
     }
 }
@@ -136,13 +145,13 @@ function filterByPot(num) {
     document.querySelectorAll('.btn-pot-tab').forEach(b => b.classList.remove('active'));
     document.getElementById(`pot-tab-${num}`).classList.add('active');
     renderInput();
+    renderBoard();
 }
 
 function renderInput() {
+    if(!isAdmin) return;
     const filtered = teamData.filter(t => t.pot === currentPot);
     const container = document.getElementById('input-list');
-    
-    // Cek placement mana saja yang sudah diambil oleh tim di POT ini
     const takenPlacements = filtered.map(t => t.placement).filter(p => p > 0);
 
     container.innerHTML = filtered.map((t, idx) => {
@@ -158,18 +167,17 @@ function renderInput() {
                 <div id="val-${t.team_index}" style="color:var(--orange); font-weight:700;">${total} PT</div>
             </div>
             <div class="panel-content">
-                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">PLACEMENT (1 NOMOR 1 TIM)</div>
+                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">HASHTAG / PLACEMENT</div>
                 <div class="grid-generic">
                     ${[1,2,3,4,5,6,7,8,9,10,11,12].map(p => {
                         const isSelf = t.placement === p;
                         const isTaken = takenPlacements.includes(p) && !isSelf;
-                        const cssClass = isSelf ? 'active' : (isTaken ? 'taken' : '');
-                        const clickAttr = isTaken ? '' : `onclick="updateVal(${t.team_index}, 'placement', ${p}, event)"`;
-                        return `<button class="btn-opt ${cssClass}" ${clickAttr}>#${p}</button>`;
+                        return `<button class="btn-opt ${isSelf ? 'active' : (isTaken ? 'taken' : '')}" 
+                                ${isTaken ? '' : `onclick="updateVal(${t.team_index}, 'placement', ${p}, event)"`}>#${p}</button>`;
                     }).join('')}
                 </div>
                 
-                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">QUICK POINT KILL</div>
+                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">QUICK KILL</div>
                 <div class="kill-grid">
                     <button class="btn-kill-add" onclick="updateVal(${t.team_index}, 'kills', 1, event)">+1</button>
                     <button class="btn-kill-add" onclick="updateVal(${t.team_index}, 'kills', 5, event)">+5</button>
@@ -184,8 +192,8 @@ function renderInput() {
                     <button class="k-btn" style="border-color:var(--orange); color:var(--orange);" onclick="updateVal(${t.team_index}, 'kills', 1, event)">+1</button>
                 </div>
 
-                <button class="btn-close-panel" onclick="toggleAccordion(${t.team_index}, event)">TUTUP KOLOM INPUT</button>
-                <button class="btn-delete" onclick="deleteTeam(${t.team_index})">Hapus Tim</button>
+                <button class="btn-close-panel" onclick="toggleAccordion(${t.team_index})">SIMPAN & TUTUP</button>
+                <div style="text-align:right;"><button class="btn-delete" onclick="deleteTeam(${t.team_index})">Hapus Tim</button></div>
             </div>
         </div>`;
     }).join('');
@@ -193,63 +201,27 @@ function renderInput() {
 
 async function updateVal(id, field, value, event) {
     if(event) event.stopPropagation();
-    
     const t = teamData.find(x => x.team_index === id);
     if(!t) return;
 
-    if(field === 'placement') {
-        t.placement = value;
-        // Re-render input untuk memperbarui status 'taken' di tim lain
-        renderInput();
-    } else if (field === 'reset') {
-        t.kills = 0;
-        document.getElementById(`ktext-${id}`).innerText = '0 KILLS';
-    } else {
-        if(value === -1) t.kills = Math.max(0, t.kills - 1);
-        else t.kills += value;
-        document.getElementById(`ktext-${id}`).innerText = t.kills + ' KILLS';
-    }
+    if(field === 'placement') t.placement = value;
+    else if (field === 'reset') t.kills = 0;
+    else t.kills = Math.max(0, t.kills + value);
 
+    // Update UI instan
     const total = (POINTS[t.placement] || 0) + (t.kills || 0);
     document.getElementById(`val-${id}`).innerText = total + ' PT';
+    if(document.getElementById(`ktext-${id}`)) document.getElementById(`ktext-${id}`).innerText = t.kills + ' KILLS';
+    
+    if(field === 'placement') renderInput(); // Refresh penanda taken
 
     await client.from('tournament_data').update({ placement: t.placement, kills: t.kills }).eq('team_index', id);
 }
 
-function toggleAccordion(id, event) {
-    if(event) event.stopPropagation();
-    if(openId === id) openId = null;
-    else openId = id;
+function toggleAccordion(id) {
+    // Reset ID jika klik tim yang sama untuk menutup, atau set ID baru untuk buka
+    openId = (openId === id) ? null : id;
     renderInput();
-}
-
-async function addTeamManual() {
-    const name = document.getElementById('manual-name').value.trim();
-    if(!name) return;
-    await client.from('tournament_data').insert([{ pot: currentPot, team_name: name, placement: 0, kills: 0 }]);
-    document.getElementById('manual-name').value = '';
-    await loadData();
-}
-
-async function deleteTeam(id) {
-    if(!confirm('Hapus tim?')) return;
-    await client.from('tournament_data').delete().eq('team_index', id);
-    openId = null;
-    await loadData();
-}
-
-async function saveBulkTeams() {
-    const names = document.getElementById('raw-teams').value.split('\n').filter(n => n.trim() !== '');
-    const currentTeams = teamData.filter(t => t.pot === currentPot);
-    for(let i=0; i < Math.max(names.length, currentTeams.length); i++) {
-        if(names[i] && currentTeams[i]) {
-            await client.from('tournament_data').update({ team_name: names[i].trim() }).eq('team_index', currentTeams[i].team_index);
-        } else if(names[i]) {
-            await client.from('tournament_data').insert([{ pot: currentPot, team_name: names[i].trim(), placement: 0, kills: 0 }]);
-        }
-    }
-    alert('Berhasil Update!');
-    await loadData();
 }
 
 function renderBoard() {
@@ -270,10 +242,33 @@ function renderBoard() {
 
 function switchMainPage(p) {
     ['input', 'board', 'config'].forEach(page => {
-        document.getElementById(`page-${page}`).style.display = (page === p) ? 'block' : 'none';
-        document.getElementById(`tab-${page}`).classList.toggle('active', page === p);
+        const el = document.getElementById(`page-${page}`);
+        if(el) el.style.display = (page === p) ? 'block' : 'none';
+        const tab = document.getElementById(`tab-${page}`);
+        if(tab) tab.classList.toggle('active', page === p);
     });
     document.getElementById('pot-nav').style.display = (p === 'config') ? 'none' : 'flex';
+}
+
+async function deleteTeam(id) {
+    if(!confirm('Hapus tim?')) return;
+    await client.from('tournament_data').delete().eq('team_index', id);
+    openId = null;
+    await loadData();
+}
+
+async function saveBulkTeams() {
+    const names = document.getElementById('raw-teams').value.split('\n').filter(n => n.trim() !== '');
+    const currentTeams = teamData.filter(t => t.pot === currentPot);
+    for(let i=0; i < Math.max(names.length, currentTeams.length); i++) {
+        if(names[i] && currentTeams[i]) {
+            await client.from('tournament_data').update({ team_name: names[i].trim() }).eq('team_index', currentTeams[i].team_index);
+        } else if(names[i]) {
+            await client.from('tournament_data').insert([{ pot: currentPot, team_name: names[i].trim(), placement: 0, kills: 0 }]);
+        }
+    }
+    alert('Update Sukses!');
+    await loadData();
 }
 </script>
 </body>
