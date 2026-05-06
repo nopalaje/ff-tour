@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FF Oslo Jaya - Ultimate Input</title>
+    <title>FF Oslo Jaya - Secure Input</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
     <style>
@@ -11,6 +11,7 @@
             --bg: #12121a; --surface: #1a1a26; --card: #242435;
             --orange: #ff6b00; --text: #f0f0f0; --muted: rgba(240,240,240,0.4);
             --border: rgba(255,255,255,0.08); --green: #00e676; --red: #ff4444;
+            --disabled: #333344;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
@@ -38,8 +39,8 @@
         .grid-generic { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; margin-bottom: 15px; }
         .btn-opt { padding: 10px 0; background: var(--surface); border: 1px solid var(--border); color: white; border-radius: 6px; font-family: 'Rajdhani'; font-weight: 600; cursor: pointer; font-size: 11px; }
         .btn-opt.active { background: var(--orange); border-color: var(--orange); }
+        .btn-opt.taken { background: var(--disabled); color: var(--muted); cursor: not-allowed; border: none; }
         
-        /* Kill Buttons Styles */
         .kill-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 15px; }
         .btn-kill-add { padding: 12px 0; background: rgba(255,107,0,0.1); border: 1px solid var(--orange); color: var(--orange); border-radius: 6px; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; font-size: 11px; }
         .btn-kill-reset { padding: 12px 0; background: rgba(255,68,68,0.1); border: 1px solid var(--red); color: var(--red); border-radius: 6px; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; font-size: 10px; }
@@ -47,10 +48,12 @@
         .kill-ctrl { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; background: var(--bg); padding: 10px; border-radius: 8px; }
         .k-btn { width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--red); background: none; color: var(--red); cursor: pointer; font-size: 20px; font-weight: 700; }
 
+        .btn-close-panel { width: 100%; background: #2a2a3a; color: white; border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-size: 11px; font-weight: 600; margin-top: 10px; cursor: pointer; }
+        .btn-delete { background: none; color: var(--red); border: 1px solid var(--red); padding: 5px; border-radius: 6px; font-size: 9px; font-weight: 700; width: fit-content; cursor: pointer; opacity: 0.5; margin-top: 15px; }
+        
         .config-card { background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
         .input-dark { width: 100%; background: var(--bg); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; font-size: 16px; margin-bottom: 10px; }
         .num-badge { font-family: 'Rajdhani'; color: var(--muted); font-size: 12px; margin-right: 15px; width: 20px; text-align: center; }
-        .btn-delete { background: none; color: var(--red); border: 1px solid var(--red); padding: 8px; border-radius: 6px; font-size: 10px; font-weight: 700; width: 100%; cursor: pointer; opacity: 0.6; }
     </style>
 </head>
 <body>
@@ -59,7 +62,7 @@
     <div class="login-box">
         <div class="logo-text" style="font-size:28px; text-align:center; margin-bottom:20px;">FF TOURNAMENT</div>
         <input type="password" id="admin-pass" placeholder="PASSWORD" class="input-dark" style="text-align:center;">
-        <button onclick="handleLogin('admin')" style="width:100%; padding:12px; background:var(--orange); color:white; border:none; border-radius:8px; font-weight:700;">ADMIN LOGIN</button>
+        <button onclick="handleLogin()" style="width:100%; padding:12px; background:var(--orange); color:white; border:none; border-radius:8px; font-weight:700;">ADMIN LOGIN</button>
     </div>
 </div>
 
@@ -113,7 +116,7 @@ document.getElementById('pot-nav').innerHTML = Array.from({length: 12}, (_, i) =
     <button class="btn-pot-tab ${num === 1 ? 'active' : ''}" id="pot-tab-${num}" onclick="filterByPot(${num})">POT ${num}</button>
 `).join('');
 
-async function handleLogin(role) {
+async function handleLogin() {
     if (document.getElementById('admin-pass').value === 'oslojaya') {
         document.getElementById('login-screen').style.display = 'none';
         await loadData();
@@ -139,6 +142,9 @@ function renderInput() {
     const filtered = teamData.filter(t => t.pot === currentPot);
     const container = document.getElementById('input-list');
     
+    // Cek placement mana saja yang sudah diambil oleh tim di POT ini
+    const takenPlacements = filtered.map(t => t.placement).filter(p => p > 0);
+
     container.innerHTML = filtered.map((t, idx) => {
         const total = (POINTS[t.placement] || 0) + (t.kills || 0);
         const isOpen = openId === t.team_index ? 'open' : '';
@@ -152,11 +158,15 @@ function renderInput() {
                 <div id="val-${t.team_index}" style="color:var(--orange); font-weight:700;">${total} PT</div>
             </div>
             <div class="panel-content">
-                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">PLACEMENT</div>
+                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">PLACEMENT (1 NOMOR 1 TIM)</div>
                 <div class="grid-generic">
-                    ${[1,2,3,4,5,6,7,8,9,10,11,12].map(p => `
-                        <button class="btn-opt ${t.placement === p ? 'active' : ''}" onclick="updateVal(${t.team_index}, 'placement', ${p}, event)">#${p}</button>
-                    `).join('')}
+                    ${[1,2,3,4,5,6,7,8,9,10,11,12].map(p => {
+                        const isSelf = t.placement === p;
+                        const isTaken = takenPlacements.includes(p) && !isSelf;
+                        const cssClass = isSelf ? 'active' : (isTaken ? 'taken' : '');
+                        const clickAttr = isTaken ? '' : `onclick="updateVal(${t.team_index}, 'placement', ${p}, event)"`;
+                        return `<button class="btn-opt ${cssClass}" ${clickAttr}>#${p}</button>`;
+                    }).join('')}
                 </div>
                 
                 <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">QUICK POINT KILL</div>
@@ -173,7 +183,9 @@ function renderInput() {
                     <span id="ktext-${t.team_index}" style="flex:1; text-align:center; font-weight:700; font-size:22px; color:var(--orange);">${t.kills} KILLS</span>
                     <button class="k-btn" style="border-color:var(--orange); color:var(--orange);" onclick="updateVal(${t.team_index}, 'kills', 1, event)">+1</button>
                 </div>
-                <button class="btn-delete" onclick="deleteTeam(${t.team_index})">HAPUS TIM</button>
+
+                <button class="btn-close-panel" onclick="toggleAccordion(${t.team_index}, event)">TUTUP KOLOM INPUT</button>
+                <button class="btn-delete" onclick="deleteTeam(${t.team_index})">Hapus Tim</button>
             </div>
         </div>`;
     }).join('');
@@ -187,27 +199,25 @@ async function updateVal(id, field, value, event) {
 
     if(field === 'placement') {
         t.placement = value;
+        // Re-render input untuk memperbarui status 'taken' di tim lain
+        renderInput();
     } else if (field === 'reset') {
         t.kills = 0;
+        document.getElementById(`ktext-${id}`).innerText = '0 KILLS';
     } else {
         if(value === -1) t.kills = Math.max(0, t.kills - 1);
         else t.kills += value;
+        document.getElementById(`ktext-${id}`).innerText = t.kills + ' KILLS';
     }
 
     const total = (POINTS[t.placement] || 0) + (t.kills || 0);
     document.getElementById(`val-${id}`).innerText = total + ' PT';
-    if(document.getElementById(`ktext-${id}`)) {
-        document.getElementById(`ktext-${id}`).innerText = t.kills + ' KILLS';
-    }
-    if(field === 'placement') {
-        const btns = document.querySelectorAll(`#item-${id} .btn-opt`);
-        btns.forEach((b, i) => b.classList.toggle('active', (i+1) === value));
-    }
 
     await client.from('tournament_data').update({ placement: t.placement, kills: t.kills }).eq('team_index', id);
 }
 
-function toggleAccordion(id) {
+function toggleAccordion(id, event) {
+    if(event) event.stopPropagation();
     if(openId === id) openId = null;
     else openId = id;
     renderInput();
