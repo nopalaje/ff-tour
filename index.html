@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FF Oslo Jaya - Final Fix</title>
+    <title>FF Oslo Jaya - Final Stable</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
     <style>
@@ -11,10 +11,9 @@
             --bg: #12121a; --surface: #1a1a26; --card: #242435;
             --orange: #ff6b00; --text: #f0f0f0; --muted: rgba(240,240,240,0.4);
             --border: rgba(255,255,255,0.08); --green: #00e676; --red: #ff4444;
-            --disabled: #2a2a35;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; min-height: 100vh; overflow-x: hidden; }
         
         #login-screen { position:fixed; inset:0; background:var(--bg); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
         .login-box { width:100%; max-width:320px; background:var(--surface); padding:25px; border-radius:15px; border:1px solid var(--border); }
@@ -26,35 +25,33 @@
         .tab-m { flex: 1; padding: 15px; text-align: center; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; color: var(--muted); font-size: 14px; }
         .tab-m.active { color: var(--orange); border-bottom: 2px solid var(--orange); }
 
-        .pot-selector { display: flex; overflow-x: auto; background: var(--bg); padding: 10px; gap: 8px; border-bottom: 1px solid var(--border); position: sticky; top: 105px; z-index: 99; -webkit-overflow-scrolling: touch; }
-        .btn-pot-tab { padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); border-radius: 6px; white-space: nowrap; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; font-size: 12px; }
+        .pot-selector { display: flex; overflow-x: auto; background: var(--bg); padding: 10px; gap: 8px; border-bottom: 1px solid var(--border); position: sticky; top: 105px; z-index: 99; }
+        .btn-pot-tab { padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); border-radius: 6px; white-space: nowrap; font-family: 'Rajdhani'; font-weight: 700; font-size: 12px; }
         .btn-pot-tab.active { background: var(--orange); color: white; border-color: var(--orange); }
 
-        .scroll-area { padding: 15px; flex: 1; }
+        .scroll-area { padding: 15px; }
         .team-item { background: var(--card); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border); overflow: hidden; }
         .team-trigger { padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .panel-content { padding: 0 15px 15px 15px; display: none; border-top: 1px solid var(--border); }
+        .panel-content { padding: 0 15px 15px 15px; display: none; border-top: 1px solid var(--border); background: rgba(0,0,0,0.2); }
         .team-item.open .panel-content { display: block; }
 
-        .grid-generic { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; margin-bottom: 15px; }
-        .btn-opt { padding: 10px 0; background: var(--surface); border: 1px solid var(--border); color: white; border-radius: 6px; font-family: 'Rajdhani'; font-weight: 600; cursor: pointer; font-size: 11px; }
+        .grid-generic { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0; }
+        .btn-opt { padding: 10px 0; background: var(--surface); border: 1px solid var(--border); color: white; border-radius: 6px; font-family: 'Rajdhani'; font-weight: 600; font-size: 11px; }
         .btn-opt.active { background: var(--orange); border-color: var(--orange); }
-        .btn-opt.taken { background: var(--disabled); color: rgba(255,255,255,0.1); cursor: not-allowed; border: none; }
+        .btn-opt.taken { opacity: 0.2; pointer-events: none; }
         
         .kill-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 15px; }
-        .btn-kill-add { padding: 12px 0; background: rgba(255,107,0,0.1); border: 1px solid var(--orange); color: var(--orange); border-radius: 6px; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; font-size: 11px; }
-        .btn-kill-reset { padding: 12px 0; background: rgba(255,68,68,0.1); border: 1px solid var(--red); color: var(--red); border-radius: 6px; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; font-size: 10px; }
+        .btn-kill-add { padding: 12px 0; background: rgba(255,107,0,0.1); border: 1px solid var(--orange); color: var(--orange); border-radius: 6px; font-family: 'Rajdhani'; font-weight: 700; font-size: 11px; }
+        .btn-kill-reset { padding: 12px 0; background: rgba(255,68,68,0.1); border: 1px solid var(--red); color: var(--red); border-radius: 6px; font-family: 'Rajdhani'; font-weight: 700; font-size: 10px; }
         
         .kill-ctrl { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; background: var(--bg); padding: 10px; border-radius: 8px; }
-        .k-btn { width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--red); background: none; color: var(--red); cursor: pointer; font-size: 20px; font-weight: 700; }
+        .k-btn { width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--red); color: var(--red); background: none; font-size: 20px; font-weight: 700; cursor: pointer; }
 
-        .btn-close-panel { width: 100%; background: var(--orange); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 12px; font-weight: 700; margin-top: 10px; cursor: pointer; }
-        .btn-delete { background: rgba(255,68,68,0.1); color: var(--red); border: 1px solid var(--red); padding: 8px; border-radius: 6px; font-size: 10px; font-weight: 700; width: 100%; cursor: pointer; margin-top: 15px; }
+        .btn-close-panel { width: 100%; background: var(--orange); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; margin-top: 10px; }
+        .btn-delete { background: rgba(255,68,68,0.1); color: var(--red); border: 1px solid var(--red); padding: 8px; border-radius: 6px; font-size: 10px; font-weight: 700; width: 100%; margin-top: 15px; }
         
         .config-card { background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
-        .input-dark { width: 100%; background: var(--bg); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; font-size: 16px; margin-bottom: 10px; outline: none; }
-        .num-badge { font-family: 'Rajdhani'; color: var(--muted); font-size: 12px; margin-right: 15px; width: 20px; text-align: center; }
-        .btn-danger-large { width: 100%; background: var(--red); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 700; font-family: 'Rajdhani'; cursor: pointer; margin-top: 10px; }
+        .input-dark { width: 100%; background: var(--bg); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; outline: none; }
     </style>
 </head>
 <body>
@@ -63,22 +60,22 @@
     <div class="login-box">
         <div class="logo-text" style="font-size:28px; text-align:center; margin-bottom:20px;">FF TOURNAMENT</div>
         <input type="password" id="admin-pass" placeholder="PASSWORD ADMIN" class="input-dark" style="text-align:center;">
-        <button onclick="handleLogin('admin')" style="width:100%; padding:14px; background:var(--orange); color:white; border:none; border-radius:8px; font-weight:700; margin-bottom:12px; cursor:pointer;">LOGIN ADMIN</button>
-        <button onclick="handleLogin('guest')" style="width:100%; padding:12px; background:transparent; color:white; border:1px solid var(--border); border-radius:8px; cursor:pointer;">MODE TAMU (VIEW ONLY)</button>
+        <button onclick="handleLogin('admin')" style="width:100%; padding:14px; background:var(--orange); color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer;">LOGIN ADMIN</button>
+        <button onclick="handleLogin('guest')" style="width:100%; padding:12px; background:transparent; color:white; border:1px solid var(--border); border-radius:8px; margin-top:10px; cursor:pointer;">MODE TAMU</button>
     </div>
 </div>
 
 <header>
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div class="logo-text">FF TOURNAMENT</div>
-        <div id="sync-status" style="font-size: 10px; color: var(--green);">● LIVE FIXED</div>
+        <div id="sync-status" style="font-size: 10px; color: var(--green);">● STABLE MODE</div>
     </div>
 </header>
 
 <div class="tabs-main">
-    <div class="tab-m active" id="tab-input" onclick="switchMainPage('input')">INPUT</div>
-    <div class="tab-m" id="tab-board" onclick="switchMainPage('board')">LEADERBOARD</div>
-    <div class="tab-m" id="tab-config" onclick="switchMainPage('config')">PENGATURAN</div>
+    <div class="tab-m active" id="tab-input" onclick="switchPage('input')">INPUT</div>
+    <div class="tab-m" id="tab-board" onclick="switchPage('board')">LEADERBOARD</div>
+    <div class="tab-m" id="tab-config" onclick="switchPage('config')">PENGATURAN</div>
 </div>
 
 <div class="pot-selector" id="pot-nav"></div>
@@ -88,26 +85,20 @@
 </div>
 
 <div id="page-board" class="scroll-area" style="display:none;">
-    <div id="board-list" style="padding-bottom: 80px;"></div>
+    <div id="board-list"></div>
 </div>
 
 <div id="page-config" class="scroll-area" style="display:none;">
     <div class="config-card">
-        <h4 style="color:var(--orange); margin-bottom:10px; font-family:'Rajdhani';">TAMBAH TIM MANUAL</h4>
-        <input type="text" id="manual-name" class="input-dark" placeholder="Nama Tim Baru">
-        <button onclick="addTeamManual()" style="width: 100%; background: transparent; color: var(--orange); border: 1px solid var(--orange); padding: 12px; border-radius: 8px; font-weight: 700; cursor:pointer;">TAMBAH KE POT AKTIF</button>
-    </div>
-    
-    <div class="config-card">
-        <h4 style="color:var(--orange); margin-bottom:10px; font-family:'Rajdhani';">BULK UPDATE NAMA TIM</h4>
-        <textarea id="raw-teams" class="input-dark" style="height: 120px;" placeholder="Tulis nama tim per baris..."></textarea>
-        <button onclick="saveBulkTeams()" style="width: 100%; background: var(--orange); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor:pointer;">SIMPAN SEMUA NAMA</button>
+        <h4 style="color:var(--orange); margin-bottom:10px;">BULK NAMA TIM</h4>
+        <textarea id="raw-teams" class="input-dark" style="height: 100px;" placeholder="Nama tim per baris..."></textarea>
+        <button onclick="saveBulk()" style="width:100%; padding:12px; background:var(--orange); border:none; border-radius:8px; color:white; font-weight:700;">UPDATE NAMA TIM</button>
     </div>
 
     <div class="config-card" style="border-color: var(--red);">
-        <h4 style="color:var(--red); margin-bottom:10px; font-family:'Rajdhani';">DANGER ZONE</h4>
-        <p id="danger-desc" style="font-size: 11px; color: var(--muted); margin-bottom: 10px;">Fitur ini akan MENGHAPUS SEMUA TIM dan SEMUA SKOR di POT ini secara permanen.</p>
-        <button id="danger-btn" onclick="hardResetPot()" class="btn-danger-large">HAPUS SEMUA DATA DI POT 1</button>
+        <h4 style="color:var(--red); margin-bottom:10px;">DANGER ZONE</h4>
+        <p style="font-size: 11px; color: var(--muted); margin-bottom: 10px;">Tombol ini akan menghapus semua nama tim dan skor di POT aktif.</p>
+        <button onclick="hardReset()" style="width:100%; padding:14px; background:var(--red); border:none; border-radius:8px; color:white; font-weight:700;">HAPUS SEMUA DATA POT INI</button>
     </div>
 </div>
 
@@ -119,49 +110,39 @@ const client = supabase.createClient(SB_URL, SB_KEY);
 const POINTS = [0, 12, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0];
 let teamData = [];
 let currentPot = 1;
-let openId = null; 
+let openId = null;
 let isAdmin = false;
 
-// Generate POT tabs
-document.getElementById('pot-nav').innerHTML = Array.from({length: 12}, (_, i) => i + 1).map(num => `
-    <button class="btn-pot-tab ${num === 1 ? 'active' : ''}" id="pot-tab-${num}" onclick="filterByPot(${num})">POT ${num}</button>
+// Navigasi POT
+document.getElementById('pot-nav').innerHTML = Array.from({length:12}, (_,i)=>i+1).map(n => `
+    <button class="btn-pot-tab ${n==1?'active':''}" id="pot-tab-${n}" onclick="changePot(${n})">POT ${n}</button>
 `).join('');
 
 async function handleLogin(role) {
-    if (role === 'admin') {
-        if (document.getElementById('admin-pass').value === 'oslojaya') {
-            isAdmin = true;
-            document.getElementById('login-screen').style.display = 'none';
-            await loadData();
-        } else { alert('Password Salah!'); }
-    } else {
+    if(role === 'admin' && document.getElementById('admin-pass').value === 'oslojaya') {
+        isAdmin = true;
+    } else if(role === 'guest') {
         isAdmin = false;
-        document.getElementById('login-screen').style.display = 'none';
         document.getElementById('tab-input').style.display = 'none';
         document.getElementById('tab-config').style.display = 'none';
-        switchMainPage('board');
-        await loadData();
-    }
+        switchPage('board');
+    } else { return alert('Password Salah!'); }
+    
+    document.getElementById('login-screen').style.display = 'none';
+    loadData();
 }
 
 async function loadData() {
-    const { data, error } = await client.from('tournament_data').select('*').order('team_index', { ascending: true });
-    if (error) console.error("Load Error:", error);
+    const { data } = await client.from('tournament_data').select('*').order('team_index', {ascending:true});
     teamData = data || [];
     renderInput();
     renderBoard();
 }
 
-function filterByPot(num) {
-    currentPot = num;
+function changePot(n) {
+    currentPot = n;
     openId = null;
-    document.querySelectorAll('.btn-pot-tab').forEach(b => b.classList.remove('active'));
-    document.getElementById(`pot-tab-${num}`).classList.add('active');
-    
-    // Update Danger Zone UI
-    const dangerBtn = document.getElementById('danger-btn');
-    if(dangerBtn) dangerBtn.innerText = `HAPUS SEMUA DATA DI POT ${num}`;
-    
+    document.querySelectorAll('.btn-pot-tab').forEach(b => b.classList.toggle('active', b.id == `pot-tab-${n}`));
     renderInput();
     renderBoard();
 }
@@ -169,156 +150,99 @@ function filterByPot(num) {
 function renderInput() {
     if(!isAdmin) return;
     const filtered = teamData.filter(t => t.pot === currentPot);
-    const container = document.getElementById('input-list');
-    const takenPlacements = filtered.map(t => t.placement).filter(p => p > 0);
-
-    container.innerHTML = filtered.map((t, idx) => {
-        const total = (POINTS[t.placement] || 0) + (t.kills || 0);
-        const isOpen = openId === t.team_index ? 'open' : '';
-        // Konversi team_index ke string aman untuk mencegah error integer null
-        const safeId = t.team_index;
-
-        return `
-        <div class="team-item ${isOpen}" id="item-${safeId}">
-            <div class="team-trigger" onclick="toggleAccordion(${safeId})">
-                <div style="display:flex; align-items:center;">
-                    <span class="num-badge">${idx + 1}</span>
-                    <div style="font-weight:600">${t.team_name}</div>
-                </div>
-                <div id="val-${safeId}" style="color:var(--orange); font-weight:700;">${total} PT</div>
+    const taken = filtered.map(t => t.placement).filter(p => p > 0);
+    
+    document.getElementById('input-list').innerHTML = filtered.map((t, i) => `
+        <div class="team-item ${openId == t.team_index ? 'open' : ''}">
+            <div class="team-trigger" onclick="toggleAcc(${t.team_index})">
+                <div style="font-weight:600"><span style="color:var(--muted); margin-right:10px;">${i+1}</span>${t.team_name}</div>
+                <div style="color:var(--orange); font-weight:700;">${(POINTS[t.placement]||0)+t.kills} PT</div>
             </div>
             <div class="panel-content">
-                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">PLACEMENT</div>
+                <div style="font-size:10px; color:var(--muted)">PLACEMENT</div>
                 <div class="grid-generic">
                     ${[1,2,3,4,5,6,7,8,9,10,11,12].map(p => {
-                        const isSelf = t.placement === p;
-                        const isTaken = takenPlacements.includes(p) && !isSelf;
-                        return `<button class="btn-opt ${isSelf ? 'active' : (isTaken ? 'taken' : '')}" 
-                                ${isTaken ? '' : `onclick="updateVal(${safeId}, 'placement', ${p}, event)"`}>#${p}</button>`;
+                        const isSelf = t.placement == p;
+                        const isTaken = taken.includes(p) && !isSelf;
+                        return `<button class="btn-opt ${isSelf?'active':''} ${isTaken?'taken':''}" onclick="updateDb(${t.team_index},'placement',${p})">#${p}</button>`;
                     }).join('')}
                 </div>
-                
-                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">QUICK POINT KILL</div>
+                <div style="font-size:10px; color:var(--muted)">KILLS</div>
                 <div class="kill-grid">
-                    <button class="btn-kill-add" onclick="updateVal(${safeId}, 'kills', 1, event)">+1</button>
-                    <button class="btn-kill-add" onclick="updateVal(${safeId}, 'kills', 5, event)">+5</button>
-                    <button class="btn-kill-add" onclick="updateVal(${safeId}, 'kills', 10, event)">+10</button>
-                    <button class="btn-kill-add" onclick="updateVal(${safeId}, 'kills', 20, event)">+20</button>
-                    <button class="btn-kill-reset" onclick="updateVal(${safeId}, 'reset', 0, event)">RESET</button>
+                    ${[1,5,10,20].map(k => `<button class="btn-kill-add" onclick="updateDb(${t.team_index},'kills',${k})">+${k}</button>`)}
+                    <button class="btn-kill-reset" onclick="updateDb(${t.team_index},'reset',0)">RESET</button>
                 </div>
-
                 <div class="kill-ctrl">
-                    <button class="k-btn" onclick="updateVal(${safeId}, 'kills', -1, event)">-1</button>
-                    <span id="ktext-${safeId}" style="flex:1; text-align:center; font-weight:700; font-size:22px; color:var(--orange);">${t.kills} KILLS</span>
-                    <button class="k-btn" style="border-color:var(--orange); color:var(--orange);" onclick="updateVal(${safeId}, 'kills', 1, event)">+1</button>
+                    <button class="k-btn" onclick="updateDb(${t.team_index},'kills',-1)">-</button>
+                    <div style="flex:1; text-align:center; font-weight:700; font-size:20px; color:var(--orange);">${t.kills} KILLS</div>
+                    <button class="k-btn" style="border-color:var(--orange); color:var(--orange);" onclick="updateDb(${t.team_index},'kills',1)">+</button>
                 </div>
-
-                <button class="btn-close-panel" onclick="toggleAccordion(${safeId})">SIMPAN & TUTUP</button>
-                <button class="btn-delete" onclick="deleteTeam(${safeId}, event)">HAPUS PERMANEN</button>
+                <button class="btn-close-panel" onclick="toggleAcc(null)">SIMPAN & TUTUP</button>
+                <button class="btn-delete" onclick="deleteSingle(${t.team_index})">HAPUS TIM INI</button>
             </div>
-        </div>`;
-    }).join('');
+        </div>
+    `).join('');
 }
 
-async function updateVal(id, field, value, event) {
-    if(event) event.stopPropagation();
+async function updateDb(id, field, val) {
     const t = teamData.find(x => x.team_index === id);
-    if(!t) return;
-
-    if(field === 'placement') t.placement = value;
-    else if (field === 'reset') t.kills = 0;
-    else t.kills = Math.max(0, t.kills + value);
-
-    const total = (POINTS[t.placement] || 0) + (t.kills || 0);
-    const vEl = document.getElementById(`val-${id}`);
-    const kEl = document.getElementById(`ktext-${id}`);
-    if(vEl) vEl.innerText = total + ' PT';
-    if(kEl) kEl.innerText = t.kills + ' KILLS';
+    if(field === 'placement') t.placement = val;
+    else if(field === 'reset') t.kills = 0;
+    else t.kills = Math.max(0, t.kills + val);
     
-    if(field === 'placement') renderInput(); 
-
-    await client.from('tournament_data').update({ placement: t.placement, kills: t.kills }).eq('team_index', id);
+    renderInput();
+    await client.from('tournament_data').update({placement: t.placement, kills: t.kills}).eq('team_index', id);
 }
 
-function toggleAccordion(id) {
+function toggleAcc(id) {
     openId = (openId === id) ? null : id;
     renderInput();
 }
 
-async function addTeamManual() {
-    const name = document.getElementById('manual-name').value.trim();
-    if(!name) return;
-    await client.from('tournament_data').insert([{ pot: currentPot, team_name: name, placement: 0, kills: 0 }]);
-    document.getElementById('manual-name').value = '';
-    await loadData();
-}
-
-async function deleteTeam(id, event) {
-    if(event) event.stopPropagation();
-    if(!id) { alert("ID Error!"); return; }
-    if(!confirm('Hapus tim ini dari database?')) return;
-    
-    const { error } = await client.from('tournament_data').delete().eq('team_index', id);
-    if(error) {
-        alert('Gagal menghapus: ' + error.message);
-    } else {
-        openId = null;
-        await loadData();
-    }
-}
-
-async function hardResetPot() {
-    if(!confirm(`PERINGATAN KERAS: Semua nama tim dan skor di POT ${currentPot} akan dihapus total. Lanjutkan?`)) return;
-    
-    const { error } = await client.from('tournament_data').delete().eq('pot', currentPot);
-    if(error) {
-        alert('Reset Gagal: ' + error.message);
-    } else {
-        alert(`POT ${currentPot} Berhasil dikosongkan!`);
-        await loadData();
-    }
-}
-
-async function saveBulkTeams() {
+async function saveBulk() {
     const names = document.getElementById('raw-teams').value.split('\n').filter(n => n.trim() !== '');
-    const currentTeams = teamData.filter(t => t.pot === currentPot);
-    
-    for(let i=0; i < Math.max(names.length, currentTeams.length); i++) {
-        if(names[i] && currentTeams[i]) {
-            await client.from('tournament_data').update({ team_name: names[i].trim() }).eq('team_index', currentTeams[i].team_index);
-        } else if(names[i]) {
-            await client.from('tournament_data').insert([{ pot: currentPot, team_name: names[i].trim(), placement: 0, kills: 0 }]);
-        }
+    for (const name of names) {
+        await client.from('tournament_data').insert([{pot: currentPot, team_name: name.trim(), placement: 0, kills: 0}]);
     }
-    alert('Selesai Update!');
     document.getElementById('raw-teams').value = '';
-    await loadData();
+    loadData();
+}
+
+async function hardReset() {
+    if(!confirm('Hapus semua tim dan skor di POT ini?')) return;
+    await client.from('tournament_data').delete().eq('pot', currentPot);
+    loadData();
+}
+
+async function deleteSingle(id) {
+    if(!confirm('Hapus tim ini?')) return;
+    await client.from('tournament_data').delete().eq('team_index', id);
+    loadData();
 }
 
 function renderBoard() {
     const sorted = teamData.filter(t => t.pot === currentPot)
-        .map(t => ({...t, total: (POINTS[t.placement] || 0) + (t.kills || 0)}))
+        .map(t => ({...t, total: (POINTS[t.placement]||0)+t.kills}))
         .sort((a,b) => b.total - a.total || b.kills - a.kills);
-
-    document.getElementById('board-list').innerHTML = sorted.map((t, idx) => `
-        <div style="background:var(--card); padding:15px; border-radius:10px; margin-bottom:8px; display:flex; align-items:center; border:1px solid var(--border);">
-            <div style="width:30px; font-weight:700; color:${idx < 3 ? 'var(--orange)' : 'white'}">${idx+1}</div>
+        
+    document.getElementById('board-list').innerHTML = sorted.map((t,i) => `
+        <div style="background:var(--card); padding:15px; border-radius:10px; margin-bottom:8px; display:flex; align-items:center;">
+            <div style="width:30px; font-weight:700; color:${i<3?'var(--orange)':'white'}">${i+1}</div>
             <div style="flex:1; font-weight:600;">${t.team_name}</div>
             <div style="text-align:right;">
                 <div style="color:var(--orange); font-weight:700;">${t.total} PT</div>
-                <div style="font-size:9px; color:var(--muted)">${t.kills} KILLS</div>
+                <div style="font-size:10px; color:var(--muted)">${t.kills} KILLS</div>
             </div>
-        </div>`).join('');
+        </div>
+    `).join('');
 }
 
-function switchMainPage(p) {
-    ['input', 'board', 'config'].forEach(page => {
-        const el = document.getElementById(`page-${page}`);
-        if(el) el.style.display = (page === p) ? 'block' : 'none';
-        const tab = document.getElementById(`tab-${page}`);
-        if(tab) tab.classList.toggle('active', page === p);
+function switchPage(p) {
+    ['input','board','config'].forEach(id => {
+        document.getElementById(`page-${id}`).style.display = (id==p?'block':'none');
+        document.getElementById(`tab-${id}`).classList.toggle('active', id==p);
     });
-    document.getElementById('pot-nav').style.display = (p === 'config') ? 'none' : 'flex';
+    document.getElementById('pot-nav').style.display = (p=='config'?'none':'flex');
 }
 </script>
 </body>
