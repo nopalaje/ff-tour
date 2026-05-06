@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FF Oslo Jaya - Ultimate Fix</title>
+    <title>FF Oslo Jaya - Final Fix</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
     <style>
@@ -71,7 +71,7 @@
 <header>
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div class="logo-text">FF TOURNAMENT</div>
-        <div id="sync-status" style="font-size: 10px; color: var(--green);">● LIVE UPDATED</div>
+        <div id="sync-status" style="font-size: 10px; color: var(--green);">● LIVE FIXED</div>
     </div>
 </header>
 
@@ -106,8 +106,8 @@
 
     <div class="config-card" style="border-color: var(--red);">
         <h4 style="color:var(--red); margin-bottom:10px; font-family:'Rajdhani';">DANGER ZONE</h4>
-        <p style="font-size: 11px; color: var(--muted); margin-bottom: 10px;">Fitur ini akan mereset Placement (#0) dan Kills (0) semua tim di POT ${currentPot} tanpa menghapus namanya.</p>
-        <button onclick="resetAllScoresInPot()" class="btn-danger-large">RESET SKOR SEMUA TIM (POT ${currentPot})</button>
+        <p id="danger-desc" style="font-size: 11px; color: var(--muted); margin-bottom: 10px;">Fitur ini akan MENGHAPUS SEMUA TIM dan SEMUA SKOR di POT ini secara permanen.</p>
+        <button id="danger-btn" onclick="hardResetPot()" class="btn-danger-large">HAPUS SEMUA DATA DI POT 1</button>
     </div>
 </div>
 
@@ -122,7 +122,7 @@ let currentPot = 1;
 let openId = null; 
 let isAdmin = false;
 
-// Init POT Tabs
+// Generate POT tabs
 document.getElementById('pot-nav').innerHTML = Array.from({length: 12}, (_, i) => i + 1).map(num => `
     <button class="btn-pot-tab ${num === 1 ? 'active' : ''}" id="pot-tab-${num}" onclick="filterByPot(${num})">POT ${num}</button>
 `).join('');
@@ -146,7 +146,7 @@ async function handleLogin(role) {
 
 async function loadData() {
     const { data, error } = await client.from('tournament_data').select('*').order('team_index', { ascending: true });
-    if (error) console.error(error);
+    if (error) console.error("Load Error:", error);
     teamData = data || [];
     renderInput();
     renderBoard();
@@ -157,13 +157,13 @@ function filterByPot(num) {
     openId = null;
     document.querySelectorAll('.btn-pot-tab').forEach(b => b.classList.remove('active'));
     document.getElementById(`pot-tab-${num}`).classList.add('active');
+    
+    // Update Danger Zone UI
+    const dangerBtn = document.getElementById('danger-btn');
+    if(dangerBtn) dangerBtn.innerText = `HAPUS SEMUA DATA DI POT ${num}`;
+    
     renderInput();
     renderBoard();
-    // Update text di danger zone
-    const dangerText = document.querySelector('.config-card p');
-    const dangerBtn = document.querySelector('.btn-danger-large');
-    if(dangerText) dangerText.innerText = `Fitur ini akan mereset Placement (#0) dan Kills (0) semua tim di POT ${currentPot} tanpa menghapus namanya.`;
-    if(dangerBtn) dangerBtn.innerText = `RESET SKOR SEMUA TIM (POT ${currentPot})`;
 }
 
 function renderInput() {
@@ -175,43 +175,46 @@ function renderInput() {
     container.innerHTML = filtered.map((t, idx) => {
         const total = (POINTS[t.placement] || 0) + (t.kills || 0);
         const isOpen = openId === t.team_index ? 'open' : '';
+        // Konversi team_index ke string aman untuk mencegah error integer null
+        const safeId = t.team_index;
+
         return `
-        <div class="team-item ${isOpen}" id="item-${t.team_index}">
-            <div class="team-trigger" onclick="toggleAccordion(${t.team_index})">
+        <div class="team-item ${isOpen}" id="item-${safeId}">
+            <div class="team-trigger" onclick="toggleAccordion(${safeId})">
                 <div style="display:flex; align-items:center;">
                     <span class="num-badge">${idx + 1}</span>
                     <div style="font-weight:600">${t.team_name}</div>
                 </div>
-                <div id="val-${t.team_index}" style="color:var(--orange); font-weight:700;">${total} PT</div>
+                <div id="val-${safeId}" style="color:var(--orange); font-weight:700;">${total} PT</div>
             </div>
             <div class="panel-content">
-                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">HASHTAG / PLACEMENT</div>
+                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">PLACEMENT</div>
                 <div class="grid-generic">
                     ${[1,2,3,4,5,6,7,8,9,10,11,12].map(p => {
                         const isSelf = t.placement === p;
                         const isTaken = takenPlacements.includes(p) && !isSelf;
                         return `<button class="btn-opt ${isSelf ? 'active' : (isTaken ? 'taken' : '')}" 
-                                ${isTaken ? '' : `onclick="updateVal(${t.team_index}, 'placement', ${p}, event)"`}>#${p}</button>`;
+                                ${isTaken ? '' : `onclick="updateVal(${safeId}, 'placement', ${p}, event)"`}>#${p}</button>`;
                     }).join('')}
                 </div>
                 
-                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">KILLS QUICK ADD</div>
+                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">QUICK POINT KILL</div>
                 <div class="kill-grid">
-                    <button class="btn-kill-add" onclick="updateVal(${t.team_index}, 'kills', 1, event)">+1</button>
-                    <button class="btn-kill-add" onclick="updateVal(${t.team_index}, 'kills', 5, event)">+5</button>
-                    <button class="btn-kill-add" onclick="updateVal(${t.team_index}, 'kills', 10, event)">+10</button>
-                    <button class="btn-kill-add" onclick="updateVal(${t.team_index}, 'kills', 20, event)">+20</button>
-                    <button class="btn-kill-reset" onclick="updateVal(${t.team_index}, 'reset', 0, event)">RESET</button>
+                    <button class="btn-kill-add" onclick="updateVal(${safeId}, 'kills', 1, event)">+1</button>
+                    <button class="btn-kill-add" onclick="updateVal(${safeId}, 'kills', 5, event)">+5</button>
+                    <button class="btn-kill-add" onclick="updateVal(${safeId}, 'kills', 10, event)">+10</button>
+                    <button class="btn-kill-add" onclick="updateVal(${safeId}, 'kills', 20, event)">+20</button>
+                    <button class="btn-kill-reset" onclick="updateVal(${safeId}, 'reset', 0, event)">RESET</button>
                 </div>
 
                 <div class="kill-ctrl">
-                    <button class="k-btn" onclick="updateVal(${t.team_index}, 'kills', -1, event)">-1</button>
-                    <span id="ktext-${t.team_index}" style="flex:1; text-align:center; font-weight:700; font-size:22px; color:var(--orange);">${t.kills} KILLS</span>
-                    <button class="k-btn" style="border-color:var(--orange); color:var(--orange);" onclick="updateVal(${t.team_index}, 'kills', 1, event)">+1</button>
+                    <button class="k-btn" onclick="updateVal(${safeId}, 'kills', -1, event)">-1</button>
+                    <span id="ktext-${safeId}" style="flex:1; text-align:center; font-weight:700; font-size:22px; color:var(--orange);">${t.kills} KILLS</span>
+                    <button class="k-btn" style="border-color:var(--orange); color:var(--orange);" onclick="updateVal(${safeId}, 'kills', 1, event)">+1</button>
                 </div>
 
-                <button class="btn-close-panel" onclick="toggleAccordion(${t.team_index})">SIMPAN & TUTUP</button>
-                <button class="btn-delete" onclick="deleteTeam(${t.team_index}, event)">HAPUS PERMANEN</button>
+                <button class="btn-close-panel" onclick="toggleAccordion(${safeId})">SIMPAN & TUTUP</button>
+                <button class="btn-delete" onclick="deleteTeam(${safeId}, event)">HAPUS PERMANEN</button>
             </div>
         </div>`;
     }).join('');
@@ -226,11 +229,10 @@ async function updateVal(id, field, value, event) {
     else if (field === 'reset') t.kills = 0;
     else t.kills = Math.max(0, t.kills + value);
 
-    // Update UI Fast
     const total = (POINTS[t.placement] || 0) + (t.kills || 0);
-    const valEl = document.getElementById(`val-${id}`);
+    const vEl = document.getElementById(`val-${id}`);
     const kEl = document.getElementById(`ktext-${id}`);
-    if(valEl) valEl.innerText = total + ' PT';
+    if(vEl) vEl.innerText = total + ' PT';
     if(kEl) kEl.innerText = t.kills + ' KILLS';
     
     if(field === 'placement') renderInput(); 
@@ -246,17 +248,17 @@ function toggleAccordion(id) {
 async function addTeamManual() {
     const name = document.getElementById('manual-name').value.trim();
     if(!name) return;
-    const { error } = await client.from('tournament_data').insert([{ pot: currentPot, team_name: name, placement: 0, kills: 0 }]);
-    if(error) alert('Error: ' + error.message);
+    await client.from('tournament_data').insert([{ pot: currentPot, team_name: name, placement: 0, kills: 0 }]);
     document.getElementById('manual-name').value = '';
     await loadData();
 }
 
 async function deleteTeam(id, event) {
     if(event) event.stopPropagation();
+    if(!id) { alert("ID Error!"); return; }
     if(!confirm('Hapus tim ini dari database?')) return;
     
-    const { error } = await client.from('tournament_data').delete().match({ team_index: id });
+    const { error } = await client.from('tournament_data').delete().eq('team_index', id);
     if(error) {
         alert('Gagal menghapus: ' + error.message);
     } else {
@@ -265,34 +267,30 @@ async function deleteTeam(id, event) {
     }
 }
 
-async function resetAllScoresInPot() {
-    if(!confirm(`Yakin ingin reset semua skor di POT ${currentPot}? Nama tim tetap aman.`)) return;
+async function hardResetPot() {
+    if(!confirm(`PERINGATAN KERAS: Semua nama tim dan skor di POT ${currentPot} akan dihapus total. Lanjutkan?`)) return;
     
-    const { error } = await client.from('tournament_data')
-        .update({ placement: 0, kills: 0 })
-        .eq('pot', currentPot);
-        
-    if(error) alert('Reset gagal: ' + error.message);
-    else {
-        alert('Skor berhasil di-reset ke nol!');
+    const { error } = await client.from('tournament_data').delete().eq('pot', currentPot);
+    if(error) {
+        alert('Reset Gagal: ' + error.message);
+    } else {
+        alert(`POT ${currentPot} Berhasil dikosongkan!`);
         await loadData();
     }
 }
 
 async function saveBulkTeams() {
     const names = document.getElementById('raw-teams').value.split('\n').filter(n => n.trim() !== '');
-    const currentTeamsInPot = teamData.filter(t => t.pot === currentPot);
+    const currentTeams = teamData.filter(t => t.pot === currentPot);
     
-    for(let i=0; i < Math.max(names.length, currentTeamsInPot.length); i++) {
-        if(names[i] && currentTeamsInPot[i]) {
-            // Update nama yang sudah ada
-            await client.from('tournament_data').update({ team_name: names[i].trim() }).eq('team_index', currentTeamsInPot[i].team_index);
+    for(let i=0; i < Math.max(names.length, currentTeams.length); i++) {
+        if(names[i] && currentTeams[i]) {
+            await client.from('tournament_data').update({ team_name: names[i].trim() }).eq('team_index', currentTeams[i].team_index);
         } else if(names[i]) {
-            // Tambah baru jika nama lebih banyak dari slot
             await client.from('tournament_data').insert([{ pot: currentPot, team_name: names[i].trim(), placement: 0, kills: 0 }]);
         }
     }
-    alert('Update Nama Selesai!');
+    alert('Selesai Update!');
     document.getElementById('raw-teams').value = '';
     await loadData();
 }
