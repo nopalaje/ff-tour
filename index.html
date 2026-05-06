@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FF Oslo Jaya - Fixed POT</title>
+    <title>FF Oslo Jaya - Login Fixed</title>
+    <!-- Script Supabase Harus di Atas -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
     <style>
@@ -67,7 +68,7 @@
 
 <header>
     <div class="logo-text">FF TOURNAMENT</div>
-    <div id="sync-status" style="font-size: 10px; color: var(--green);">● CONNECTING</div>
+    <div id="sync-status" style="font-size: 10px; color: var(--green);">● CONNECTED</div>
 </header>
 
 <div class="tabs-main">
@@ -88,9 +89,9 @@
 
 <div id="page-config" class="scroll-area">
     <div style="background: rgba(255,107,0,0.05); border: 1px dashed var(--orange); padding: 15px; border-radius: 8px;">
-        <p style="font-size:11px; margin-bottom:10px; color:var(--muted)">Input nama tim untuk 12 Slot di POT aktif.</p>
+        <p style="font-size:11px; margin-bottom:10px; color:var(--muted)">Input nama tim (Max 12) untuk POT aktif.</p>
         <textarea id="raw-teams" style="width: 100%; height: 120px; background: transparent; border: none; color: white; outline:none;" placeholder="Tim 1&#10;Tim 2..."></textarea>
-        <button style="width: 100%; background: var(--orange); color: white; border: none; padding: 12px; margin-top: 10px; border-radius: 5px; font-weight: 700; cursor:pointer;" onclick="saveBulkTeams()">SIMPAN 12 TIM KE POT INI</button>
+        <button style="width: 100%; background: var(--orange); color: white; border: none; padding: 12px; margin-top: 10px; border-radius: 5px; font-weight: 700; cursor:pointer;" onclick="saveBulkTeams()">SIMPAN KE POT INI</button>
     </div>
 </div>
 
@@ -104,28 +105,32 @@ let teamData = [];
 let currentPot = 1;
 let isAdmin = false;
 
+// Render Navigation POT
 document.getElementById('pot-nav').innerHTML = Array.from({length: 12}, (_, i) => i + 1).map(num => `
     <button class="btn-pot-tab ${num === 1 ? 'active' : ''}" id="pot-tab-${num}" onclick="filterByPot(${num})">POT ${num}</button>
 `).join('');
 
-function handleLogin(role) {
+async function handleLogin(role) {
     const pass = document.getElementById('admin-pass').value;
-    if (role === 'admin' && pass === 'oslojaya') {
-        isAdmin = true;
-        document.getElementById('login-screen').style.display = 'none';
-        loadData();
-    } else if (role === 'guest') {
+    if (role === 'admin') {
+        if (pass === 'oslojaya') {
+            isAdmin = true;
+            document.getElementById('login-screen').style.display = 'none';
+            await loadData();
+        } else { alert('Password Salah!'); }
+    } else {
         isAdmin = false;
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('tab-input').style.display = 'none';
         document.getElementById('tab-config').style.display = 'none';
         switchMainPage('board');
-        loadData();
-    } else { alert('Password Salah!'); }
+        await loadData();
+    }
 }
 
 async function loadData() {
-    const { data: teams } = await client.from('tournament_data').select('*').order('team_index', { ascending: true });
+    const { data: teams, error } = await client.from('tournament_data').select('*').order('team_index', { ascending: true });
+    if (error) { console.error(error); return; }
     teamData = teams || [];
     renderInput();
     renderBoard();
@@ -143,9 +148,14 @@ function renderInput() {
     const filtered = teamData.filter(t => t.pot === currentPot);
     const container = document.getElementById('input-list');
     
+    if (filtered.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted)">Belum ada data tim di POT ini.</div>';
+        return;
+    }
+
     container.innerHTML = filtered.map((t) => {
         const id = t.team_index;
-        const pts = (POINTS[t.placement] || 0) + t.kills;
+        const pts = (POINTS[t.placement] || 0) + (t.kills || 0);
         return `
         <div class="team-item" id="item-${id}">
             <div class="team-trigger" onclick="toggleAccordion(${id})">
@@ -161,7 +171,7 @@ function renderInput() {
                 </div>
                 <div class="kill-ctrl">
                     <button class="k-btn" onclick="updateField(${id}, 'kills', 'minus')">-</button>
-                    <span id="kill-val-${id}" style="flex:1; text-align:center; font-weight:700; font-size:22px; color:var(--orange);">${t.kills} KILLS</span>
+                    <span id="kill-val-${id}" style="flex:1; text-align:center; font-weight:700; font-size:22px; color:var(--orange);">${t.kills || 0} KILLS</span>
                     <button class="k-btn" onclick="updateField(${id}, 'kills', 'plus')">+</button>
                 </div>
             </div>
@@ -172,29 +182,27 @@ function renderInput() {
 async function updateField(id, field, value) {
     if (!isAdmin) return;
     const t = teamData.find(x => x.team_index === id);
-    
+    if (!t) return;
+
     if (field === 'placement') {
         t.placement = value;
-        // Update UI Visual Placement
         document.querySelectorAll(`#item-${id} .btn-opt`).forEach(b => b.classList.remove('active'));
         document.getElementById(`p-${id}-${value}`).classList.add('active');
     } else {
         if (value === 'plus') t.kills++;
         else t.kills = Math.max(0, t.kills - 1);
-        // Update UI Visual Kill
         document.getElementById(`kill-val-${id}`).innerText = t.kills + ' KILLS';
     }
 
-    // Update UI Total Point tanpa render ulang
     document.getElementById(`total-val-${id}`).innerText = ((POINTS[t.placement] || 0) + t.kills) + ' PT';
     
-    // Save Silent ke Cloud
-    await client.from('tournament_data').update({ [field]: t.placement, kills: t.kills }).eq('team_index', id);[cite: 1]
+    // Simpan ke Supabase tanpa refresh UI
+    await client.from('tournament_data').update({ placement: t.placement, kills: t.kills }).eq('team_index', id);
 }
 
 function renderBoard() {
     const sorted = teamData.filter(t => t.pot === currentPot && t.team_name)
-        .map(t => ({...t, total: (POINTS[t.placement] || 0) + t.kills}))
+        .map(t => ({...t, total: (POINTS[t.placement] || 0) + (t.kills || 0)}))
         .sort((a, b) => b.total - a.total || b.kills - a.kills);
 
     document.getElementById('board-list').innerHTML = sorted.map((t, i) => `
@@ -217,8 +225,10 @@ function toggleAccordion(idx) {
 
 function switchMainPage(page) {
     ['input', 'board', 'config'].forEach(p => {
-        document.getElementById(`page-${p}`).style.display = (p === page) ? 'block' : 'none';
-        document.getElementById(`tab-${p}`).classList.toggle('active', p === page);
+        const el = document.getElementById(`page-${p}`);
+        if(el) el.style.display = (p === page) ? 'block' : 'none';
+        const tab = document.getElementById(`tab-${p}`);
+        if(tab) tab.classList.toggle('active', p === page);
     });
     document.getElementById('pot-nav').style.display = (page === 'config') ? 'none' : 'flex';
 }
@@ -231,15 +241,15 @@ async function saveBulkTeams() {
     for(let i = 0; i < 12; i++) {
         const name = names[i] ? names[i].trim() : '';
         if(currentTeams[i]) {
-            await client.from('tournament_data').update({ team_name: name }).eq('team_index', currentTeams[i].team_index);[cite: 1]
+            await client.from('tournament_data').update({ team_name: name }).eq('team_index', currentTeams[i].team_index);
         }
     }
-    alert('POT ' + currentPot + ' Berhasil Diupdate!');
-    loadData();
+    alert('POT ' + currentPot + ' Diupdate!');
+    await loadData();
 }
 
+// Real-time Update
 client.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_data' }, () => {
-    // Hanya render leaderboard secara otomatis jika ada perubahan dari cloud
     renderBoard();
 }).subscribe();
 </script>
