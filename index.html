@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FF Oslo Jaya - Login Fixed</title>
-    <!-- Script Supabase Harus di Atas -->
+    <title>FF Oslo Jaya - POT Fixed</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
     <style>
@@ -50,6 +49,7 @@
         .k-btn { width: 45px; height: 45px; border-radius: 8px; border: 1px solid var(--orange); background: none; color: var(--orange); cursor: pointer; font-size: 24px; }
 
         .board-card { background: var(--card); padding: 15px; border-radius: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 15px; border: 1px solid var(--border); }
+        .num-badge { font-family: 'Rajdhani'; color: var(--muted); font-size: 12px; margin-right: 10px; border-right: 1px solid var(--border); padding-right: 10px; min-width: 25px; }
     </style>
 </head>
 <body>
@@ -89,9 +89,9 @@
 
 <div id="page-config" class="scroll-area">
     <div style="background: rgba(255,107,0,0.05); border: 1px dashed var(--orange); padding: 15px; border-radius: 8px;">
-        <p style="font-size:11px; margin-bottom:10px; color:var(--muted)">Input nama tim (Max 12) untuk POT aktif.</p>
+        <p style="font-size:11px; margin-bottom:10px; color:var(--muted)">Input nama tim (Maksimal 12) untuk POT aktif.</p>
         <textarea id="raw-teams" style="width: 100%; height: 120px; background: transparent; border: none; color: white; outline:none;" placeholder="Tim 1&#10;Tim 2..."></textarea>
-        <button style="width: 100%; background: var(--orange); color: white; border: none; padding: 12px; margin-top: 10px; border-radius: 5px; font-weight: 700; cursor:pointer;" onclick="saveBulkTeams()">SIMPAN KE POT INI</button>
+        <button style="width: 100%; background: var(--orange); color: white; border: none; padding: 12px; margin-top: 10px; border-radius: 5px; font-weight: 700; cursor:pointer;" id="btn-save-bulk">SIMPAN 12 TIM</button>
     </div>
 </div>
 
@@ -105,61 +105,74 @@ let teamData = [];
 let currentPot = 1;
 let isAdmin = false;
 
-// Render Navigation POT
 document.getElementById('pot-nav').innerHTML = Array.from({length: 12}, (_, i) => i + 1).map(num => `
     <button class="btn-pot-tab ${num === 1 ? 'active' : ''}" id="pot-tab-${num}" onclick="filterByPot(${num})">POT ${num}</button>
 `).join('');
 
 async function handleLogin(role) {
     const pass = document.getElementById('admin-pass').value;
-    if (role === 'admin') {
-        if (pass === 'oslojaya') {
-            isAdmin = true;
-            document.getElementById('login-screen').style.display = 'none';
-            await loadData();
-        } else { alert('Password Salah!'); }
-    } else {
+    if (role === 'admin' && pass === 'oslojaya') {
+        isAdmin = true;
+        document.getElementById('login-screen').style.display = 'none';
+        await loadData();
+    } else if (role === 'guest') {
         isAdmin = false;
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('tab-input').style.display = 'none';
         document.getElementById('tab-config').style.display = 'none';
         switchMainPage('board');
         await loadData();
-    }
+    } else if (role === 'admin') { alert('Password Salah!'); }
 }
 
 async function loadData() {
-    const { data: teams, error } = await client.from('tournament_data').select('*').order('team_index', { ascending: true });
-    if (error) { console.error(error); return; }
+    const { data: teams } = await client.from('tournament_data').select('*').order('team_index', { ascending: true });
     teamData = teams || [];
     renderInput();
     renderBoard();
 }
 
-function filterByPot(num) {
+async function filterByPot(num) {
     currentPot = num;
     document.querySelectorAll('.btn-pot-tab').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`pot-tab-${num}`).classList.add('active');
-    renderInput();
-    renderBoard();
+    
+    // Cek apakah data POT ini sudah ada di database
+    const filtered = teamData.filter(t => t.pot === currentPot);
+    if (filtered.length === 0 && isAdmin) {
+        document.getElementById('input-list').innerHTML = '<div style="text-align:center; padding:20px;">Menyiapkan Slot POT ' + num + '...</div>';
+        await initPotData(num);
+    } else {
+        renderInput();
+        renderBoard();
+    }
+}
+
+async function initPotData(potNum) {
+    const newItems = Array.from({length: 12}, (_, i) => ({
+        pot: potNum,
+        team_name: '',
+        placement: 0,
+        kills: 0
+    }));
+    await client.from('tournament_data').insert(newItems);
+    await loadData();
 }
 
 function renderInput() {
     const filtered = teamData.filter(t => t.pot === currentPot);
     const container = document.getElementById('input-list');
     
-    if (filtered.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--muted)">Belum ada data tim di POT ini.</div>';
-        return;
-    }
-
-    container.innerHTML = filtered.map((t) => {
+    container.innerHTML = filtered.map((t, index) => {
         const id = t.team_index;
         const pts = (POINTS[t.placement] || 0) + (t.kills || 0);
         return `
         <div class="team-item" id="item-${id}">
             <div class="team-trigger" onclick="toggleAccordion(${id})">
-                <div style="font-weight:600">${t.team_name || 'Slot Kosong'}</div>
+                <div style="display:flex; align-items:center;">
+                    <span class="num-badge">${index + 1}</span>
+                    <div style="font-weight:600">${t.team_name || 'Slot ' + (index+1)}</div>
+                </div>
                 <div id="total-val-${id}" style="color:var(--orange); font-weight:700;">${pts} PT</div>
             </div>
             <div class="panel-content">
@@ -195,8 +208,6 @@ async function updateField(id, field, value) {
     }
 
     document.getElementById(`total-val-${id}`).innerText = ((POINTS[t.placement] || 0) + t.kills) + ' PT';
-    
-    // Simpan ke Supabase tanpa refresh UI
     await client.from('tournament_data').update({ placement: t.placement, kills: t.kills }).eq('team_index', id);
 }
 
@@ -225,15 +236,13 @@ function toggleAccordion(idx) {
 
 function switchMainPage(page) {
     ['input', 'board', 'config'].forEach(p => {
-        const el = document.getElementById(`page-${p}`);
-        if(el) el.style.display = (p === page) ? 'block' : 'none';
-        const tab = document.getElementById(`tab-${p}`);
-        if(tab) tab.classList.toggle('active', p === page);
+        document.getElementById(`page-${p}`).style.display = (p === page) ? 'block' : 'none';
+        document.getElementById(`tab-${p}`).classList.toggle('active', p === page);
     });
     document.getElementById('pot-nav').style.display = (page === 'config') ? 'none' : 'flex';
 }
 
-async function saveBulkTeams() {
+document.getElementById('btn-save-bulk').onclick = async () => {
     if(!isAdmin) return;
     const names = document.getElementById('raw-teams').value.split('\n').filter(n => n.trim() !== '');
     const currentTeams = teamData.filter(t => t.pot === currentPot);
@@ -246,9 +255,8 @@ async function saveBulkTeams() {
     }
     alert('POT ' + currentPot + ' Diupdate!');
     await loadData();
-}
+};
 
-// Real-time Update
 client.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_data' }, () => {
     renderBoard();
 }).subscribe();
