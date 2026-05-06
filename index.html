@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FF Oslo Jaya - POT Fixed</title>
+    <title>FF Oslo Jaya - Final Fix</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
     <style>
@@ -31,7 +31,6 @@
         .tab-m.active { color: var(--orange); border-bottom: 2px solid var(--orange); }
 
         .pot-selector { display: flex; overflow-x: auto; background: var(--bg); padding: 10px; gap: 8px; border-bottom: 1px solid var(--border); scrollbar-width: none; }
-        .pot-selector::-webkit-scrollbar { display: none; }
         .btn-pot-tab { padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); border-radius: 6px; white-space: nowrap; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; font-size: 12px; }
         .btn-pot-tab.active { background: var(--orange); color: white; border-color: var(--orange); }
 
@@ -42,27 +41,25 @@
         .team-item.open .panel-content { display: block; }
 
         .grid-generic { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; margin-bottom: 15px; }
-        .btn-opt { padding: 10px 0; background: var(--surface); border: 1px solid var(--border); color: white; border-radius: 6px; font-family: 'Rajdhani'; font-weight: 600; cursor: pointer; font-size: 11px; outline:none; }
+        .btn-opt { padding: 10px 0; background: var(--surface); border: 1px solid var(--border); color: white; border-radius: 6px; font-family: 'Rajdhani'; font-weight: 600; cursor: pointer; font-size: 11px; }
         .btn-opt.active { background: var(--orange); border-color: var(--orange); }
         
         .kill-ctrl { display: flex; align-items: center; gap: 15px; margin-top: 10px; }
         .k-btn { width: 45px; height: 45px; border-radius: 8px; border: 1px solid var(--orange); background: none; color: var(--orange); cursor: pointer; font-size: 24px; }
 
-        .board-card { background: var(--card); padding: 15px; border-radius: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 15px; border: 1px solid var(--border); }
+        .config-card { background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .input-dark { width: 100%; background: var(--bg); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; outline: none; margin-bottom: 10px; }
         .num-badge { font-family: 'Rajdhani'; color: var(--muted); font-size: 12px; margin-right: 10px; border-right: 1px solid var(--border); padding-right: 10px; min-width: 25px; }
     </style>
 </head>
 <body>
 
 <div id="login-screen">
-    <div style="text-align:center; margin-bottom:40px;">
-        <div class="logo-text" style="font-size:32px;">FF TOURNAMENT</div>
-        <div style="font-size:11px; color:var(--muted); letter-spacing:2px;">OSLO JAYA PRO</div>
-    </div>
     <div class="login-box">
-        <input type="password" id="admin-pass" placeholder="PASSWORD" style="width:100%; padding:12px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:8px; text-align:center; outline:none; margin-bottom:15px;">
-        <button onclick="handleLogin('admin')" style="width:100%; padding:12px; background:var(--orange); color:white; border:none; border-radius:8px; font-family:'Rajdhani'; font-weight:700; cursor:pointer; margin-bottom:10px;">LOGIN ADMIN</button>
-        <button onclick="handleLogin('guest')" style="width:100%; padding:12px; background:transparent; color:var(--text); border:1px solid var(--border); border-radius:8px; font-family:'Rajdhani'; font-weight:700; cursor:pointer;">GUEST VIEW</button>
+        <div class="logo-text" style="font-size:28px; text-align:center; margin-bottom:20px;">FF TOURNAMENT</div>
+        <input type="password" id="admin-pass" placeholder="PASSWORD" class="input-dark" style="text-align:center;">
+        <button onclick="handleLogin('admin')" style="width:100%; padding:12px; background:var(--orange); color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; margin-bottom:10px;">ADMIN LOGIN</button>
+        <button onclick="handleLogin('guest')" style="width:100%; padding:12px; background:transparent; color:white; border:1px solid var(--border); border-radius:8px; cursor:pointer;">GUEST VIEW</button>
     </div>
 </div>
 
@@ -84,14 +81,22 @@
 </div>
 
 <div id="page-board" class="scroll-area">
-    <div id="board-list"></div>
+    <div id="board-list" style="padding-bottom: 50px;"></div>
 </div>
 
 <div id="page-config" class="scroll-area">
-    <div style="background: rgba(255,107,0,0.05); border: 1px dashed var(--orange); padding: 15px; border-radius: 8px;">
-        <p style="font-size:11px; margin-bottom:10px; color:var(--muted)">Input nama tim (Maksimal 12) untuk POT aktif.</p>
-        <textarea id="raw-teams" style="width: 100%; height: 120px; background: transparent; border: none; color: white; outline:none;" placeholder="Tim 1&#10;Tim 2..."></textarea>
-        <button style="width: 100%; background: var(--orange); color: white; border: none; padding: 12px; margin-top: 10px; border-radius: 5px; font-weight: 700; cursor:pointer;" id="btn-save-bulk">SIMPAN 12 TIM</button>
+    <div class="config-card">
+        <h4 style="color:var(--orange); margin-bottom:10px; font-family:'Rajdhani';">COPY PASTE TIM (12 TIM)</h4>
+        <p style="font-size:10px; color:var(--muted); margin-bottom:10px;">Paste nama tim di bawah (satu baris satu tim). Ini akan menimpa 12 slot di POT aktif.</p>
+        <textarea id="raw-teams" class="input-dark" style="height: 150px;" placeholder="Nama Tim 1&#10;Nama Tim 2..."></textarea>
+        <button onclick="saveBulkTeams()" style="width: 100%; background: var(--orange); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor:pointer;">UPDATE SEMUA NAMA DI POT INI</button>
+    </div>
+
+    <div class="config-card">
+        <h4 style="color:var(--orange); margin-bottom:10px; font-family:'Rajdhani';">TAMBAH/EDIT TIM MANUAL</h4>
+        <p style="font-size:10px; color:var(--muted); margin-bottom:10px;">Gunakan untuk menambahkan tim tunggal ke POT aktif.</p>
+        <input type="text" id="manual-team-name" class="input-dark" placeholder="Nama Tim Baru">
+        <button onclick="addTeamManual()" style="width: 100%; background: transparent; color: var(--orange); border: 1px solid var(--orange); padding: 12px; border-radius: 8px; font-weight: 700; cursor:pointer;">TAMBAH TIM KE POT</button>
     </div>
 </div>
 
@@ -137,10 +142,9 @@ async function filterByPot(num) {
     document.querySelectorAll('.btn-pot-tab').forEach(btn => btn.classList.remove('active'));
     document.getElementById(`pot-tab-${num}`).classList.add('active');
     
-    // Cek apakah data POT ini sudah ada di database
     const filtered = teamData.filter(t => t.pot === currentPot);
     if (filtered.length === 0 && isAdmin) {
-        document.getElementById('input-list').innerHTML = '<div style="text-align:center; padding:20px;">Menyiapkan Slot POT ' + num + '...</div>';
+        document.getElementById('input-list').innerHTML = '<div style="text-align:center; padding:20px;">Menyiapkan Slot...</div>';
         await initPotData(num);
     } else {
         renderInput();
@@ -151,7 +155,7 @@ async function filterByPot(num) {
 async function initPotData(potNum) {
     const newItems = Array.from({length: 12}, (_, i) => ({
         pot: potNum,
-        team_name: '',
+        team_name: `Slot ${i+1}`,
         placement: 0,
         kills: 0
     }));
@@ -162,7 +166,6 @@ async function initPotData(potNum) {
 function renderInput() {
     const filtered = teamData.filter(t => t.pot === currentPot);
     const container = document.getElementById('input-list');
-    
     container.innerHTML = filtered.map((t, index) => {
         const id = t.team_index;
         const pts = (POINTS[t.placement] || 0) + (t.kills || 0);
@@ -171,7 +174,7 @@ function renderInput() {
             <div class="team-trigger" onclick="toggleAccordion(${id})">
                 <div style="display:flex; align-items:center;">
                     <span class="num-badge">${index + 1}</span>
-                    <div style="font-weight:600">${t.team_name || 'Slot ' + (index+1)}</div>
+                    <div style="font-weight:600">${t.team_name}</div>
                 </div>
                 <div id="total-val-${id}" style="color:var(--orange); font-weight:700;">${pts} PT</div>
             </div>
@@ -211,13 +214,61 @@ async function updateField(id, field, value) {
     await client.from('tournament_data').update({ placement: t.placement, kills: t.kills }).eq('team_index', id);
 }
 
+async function addTeamManual() {
+    const name = document.getElementById('manual-team-name').value.trim();
+    if (!name) return alert('Nama tim tidak boleh kosong!');
+    
+    const { error } = await client.from('tournament_data').insert([{
+        pot: currentPot,
+        team_name: name,
+        placement: 0,
+        kills: 0
+    }]);
+    
+    if (!error) {
+        document.getElementById('manual-team-name').value = '';
+        alert('Tim berhasil ditambahkan ke POT ' + currentPot);
+        await loadData();
+    }
+}
+
+async function saveBulkTeams() {
+    if(!isAdmin) return;
+    const names = document.getElementById('raw-teams').value.split('\n').filter(n => n.trim() !== '');
+    const currentTeams = teamData.filter(t => t.pot === currentPot);
+    
+    if (names.length === 0) return alert('Masukkan minimal satu nama tim!');
+
+    // Menimpa slot yang ada berdasarkan urutan input
+    for(let i = 0; i < currentTeams.length; i++) {
+        if(names[i]) {
+            await client.from('tournament_data').update({ team_name: names[i].trim() }).eq('team_index', currentTeams[i].team_index);
+        }
+    }
+    
+    // Jika input lebih banyak dari slot yang ada, tambahkan sebagai tim baru
+    if (names.length > currentTeams.length) {
+        const newTeams = names.slice(currentTeams.length).map(n => ({
+            pot: currentPot,
+            team_name: n.trim(),
+            placement: 0,
+            kills: 0
+        }));
+        await client.from('tournament_data').insert(newTeams);
+    }
+
+    alert('Nama Tim di POT ' + currentPot + ' Berhasil Diupdate!');
+    document.getElementById('raw-teams').value = '';
+    await loadData();
+}
+
 function renderBoard() {
     const sorted = teamData.filter(t => t.pot === currentPot && t.team_name)
         .map(t => ({...t, total: (POINTS[t.placement] || 0) + (t.kills || 0)}))
         .sort((a, b) => b.total - a.total || b.kills - a.kills);
 
     document.getElementById('board-list').innerHTML = sorted.map((t, i) => `
-        <div class="board-card">
+        <div style="background:var(--card); padding:15px; border-radius:10px; margin-bottom:8px; display:flex; align-items:center; gap:15px; border:1px solid var(--border);">
             <div style="font-family:'Rajdhani'; font-weight:700; font-size:20px; width:25px; color:${i < 3 ? 'var(--orange)' : 'white'}">${i+1}</div>
             <div style="flex:1; font-weight:600;">${t.team_name}</div>
             <div style="text-align:right">
@@ -241,21 +292,6 @@ function switchMainPage(page) {
     });
     document.getElementById('pot-nav').style.display = (page === 'config') ? 'none' : 'flex';
 }
-
-document.getElementById('btn-save-bulk').onclick = async () => {
-    if(!isAdmin) return;
-    const names = document.getElementById('raw-teams').value.split('\n').filter(n => n.trim() !== '');
-    const currentTeams = teamData.filter(t => t.pot === currentPot);
-    
-    for(let i = 0; i < 12; i++) {
-        const name = names[i] ? names[i].trim() : '';
-        if(currentTeams[i]) {
-            await client.from('tournament_data').update({ team_name: name }).eq('team_index', currentTeams[i].team_index);
-        }
-    }
-    alert('POT ' + currentPot + ' Diupdate!');
-    await loadData();
-};
 
 client.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_data' }, () => {
     renderBoard();
