@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FF Cloud Tournament - Oslo Jaya Fixed</title>
+    <title>FF Cloud - Tab POT Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
     <style>
@@ -21,28 +21,37 @@
         body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
         #login-screen { position:fixed; inset:0; background:var(--bg); z-index:10000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
-        .login-box { width:100%; max-width:320px; background:var(--surface); padding:25px; border-radius:15px; border:1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .login-box { width:100%; max-width:320px; background:var(--surface); padding:25px; border-radius:15px; border:1px solid var(--border); }
 
         header { padding: 15px 20px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .logo-text { font-family: 'Rajdhani'; font-weight: 700; font-size: 20px; color: var(--orange); }
 
-        .tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); }
-        .tab { flex: 1; padding: 15px; text-align: center; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; color: var(--muted); transition: 0.3s; font-size: 14px; }
-        .tab.active { color: var(--orange); border-bottom: 2px solid var(--orange); background: rgba(255,107,0,0.05); }
+        /* TAB UTAMA */
+        .tabs-main { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); }
+        .tab-m { flex: 1; padding: 15px; text-align: center; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; color: var(--muted); font-size: 14px; }
+        .tab-m.active { color: var(--orange); border-bottom: 2px solid var(--orange); }
+
+        /* TAB POT (Sub-Tabs) */
+        .pot-selector { display: flex; overflow-x: auto; background: var(--bg); padding: 10px; gap: 8px; border-bottom: 1px solid var(--border); scrollbar-width: none; }
+        .pot-selector::-webkit-scrollbar { display: none; }
+        .btn-pot-tab { padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); border-radius: 6px; white-space: nowrap; font-family: 'Rajdhani'; font-weight: 700; cursor: pointer; font-size: 12px; }
+        .btn-pot-tab.active { background: var(--orange); color: white; border-color: var(--orange); }
 
         .scroll-area { flex: 1; overflow-y: auto; padding: 15px; display: none; }
-        .team-item { background: var(--card); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border); overflow: hidden; }
+        
+        /* TEAM CARD */
+        .team-item { background: var(--card); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border); overflow: hidden; }
         .team-trigger { padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         .panel-content { padding: 0 15px 15px 15px; display: none; border-top: 1px solid var(--border); }
         .team-item.open .panel-content { display: block; }
 
         .grid-generic { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; margin-bottom: 15px; }
-        .btn-opt { padding: 8px 0; background: var(--surface); border: 1px solid var(--border); color: white; border-radius: 6px; font-family: 'Rajdhani'; font-weight: 600; cursor: pointer; font-size: 11px; }
+        .btn-opt { padding: 10px 0; background: var(--surface); border: 1px solid var(--border); color: white; border-radius: 6px; font-family: 'Rajdhani'; font-weight: 600; cursor: pointer; font-size: 11px; }
         .btn-opt.active { background: var(--orange); border-color: var(--orange); }
         
-        .pot-badge { font-size: 9px; background: var(--surface); color: var(--orange); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--orange); font-weight: 700; }
         .kill-ctrl { display: flex; align-items: center; gap: 15px; margin-top: 10px; }
-        .k-btn { width: 35px; height: 35px; border-radius: 8px; border: 1px solid var(--orange); background: none; color: var(--orange); cursor: pointer; }
+        .k-btn { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--orange); background: none; color: var(--orange); cursor: pointer; font-size: 20px; }
+
         .board-card { background: var(--card); padding: 15px; border-radius: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 15px; border: 1px solid var(--border); }
     </style>
 </head>
@@ -54,7 +63,7 @@
         <div style="font-size:11px; color:var(--muted); letter-spacing:2px;">OSLO JAYA PRO</div>
     </div>
     <div class="login-box">
-        <input type="password" id="admin-pass" placeholder="PASSWORD ADMIN" style="width:100%; padding:12px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:8px; text-align:center; outline:none; margin-bottom:15px;">
+        <input type="password" id="admin-pass" placeholder="PASSWORD" style="width:100%; padding:12px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:8px; text-align:center; outline:none; margin-bottom:15px;">
         <button onclick="handleLogin('admin')" style="width:100%; padding:12px; background:var(--orange); color:white; border:none; border-radius:8px; font-family:'Rajdhani'; font-weight:700; cursor:pointer; margin-bottom:10px;">LOGIN ADMIN</button>
         <button onclick="handleLogin('guest')" style="width:100%; padding:12px; background:transparent; color:var(--text); border:1px solid var(--border); border-radius:8px; font-family:'Rajdhani'; font-weight:700; cursor:pointer;">GUEST VIEW</button>
     </div>
@@ -65,24 +74,35 @@
     <div id="sync-status" style="font-size: 10px; color: var(--green);">● CONNECTING</div>
 </header>
 
-<div class="tabs">
-    <div class="tab active" id="tab-input" onclick="showPage('input')">INPUT</div>
-    <div class="tab" id="tab-board" onclick="showPage('board')">LEADERBOARD</div>
-    <div class="tab" id="tab-config" onclick="showPage('config')">PENGATURAN</div>
+<div class="tabs-main">
+    <div class="tab-m active" id="tab-input" onclick="switchMainPage('input')">INPUT</div>
+    <div class="tab-m" id="tab-board" onclick="switchMainPage('board')">LEADERBOARD</div>
+    <div class="tab-m" id="tab-config" onclick="switchMainPage('config')">PENGATURAN</div>
 </div>
 
+<!-- Filter POT Tab (Hanya muncul di Tab Input & Leaderboard) -->
+<div class="pot-selector" id="pot-nav">
+    ${[1,2,3,4,5,6,7,8,9,10,11,12].map(num => `
+        <button class="btn-pot-tab ${num === 1 ? 'active' : ''}" id="pot-tab-${num}" onclick="filterByPot(${num})">POT ${num}</button>
+    `).join('')}
+</div>
+
+<!-- Halaman Input -->
 <div id="page-input" class="scroll-area" style="display:block;">
     <div id="input-list"></div>
 </div>
 
+<!-- Halaman Board -->
 <div id="page-board" class="scroll-area">
     <div id="board-list"></div>
 </div>
 
+<!-- Halaman Pengaturan -->
 <div id="page-config" class="scroll-area">
     <div style="background: rgba(255,107,0,0.05); border: 1px dashed var(--orange); padding: 15px; border-radius: 8px;">
-        <textarea id="raw-teams" style="width: 100%; height: 80px; background: transparent; border: none; color: white;" placeholder="Nama Tim (per baris)..."></textarea>
-        <button style="width: 100%; background: var(--orange); color: white; border: none; padding: 10px; margin-top: 10px; border-radius: 5px; font-weight: 600;" onclick="saveBulkTeams()">SIMPAN TIM</button>
+        <p style="font-size:11px; margin-bottom:10px; color:var(--muted)">Input nama tim (1 baris 1 nama). Urutan ini akan menentukan Tim 1, Tim 2, dst.</p>
+        <textarea id="raw-teams" style="width: 100%; height: 120px; background: transparent; border: none; color: white; outline:none;" placeholder="Contoh:&#10;Kuda Terbang&#10;Kampung Ayam"></textarea>
+        <button style="width: 100%; background: var(--orange); color: white; border: none; padding: 12px; margin-top: 10px; border-radius: 5px; font-weight: 700; cursor:pointer;" onclick="saveBulkTeams()">UPDATE SEMUA NAMA TIM</button>
     </div>
     <div id="edit-manual-list" style="margin-top: 20px;"></div>
 </div>
@@ -94,79 +114,77 @@ const client = supabase.createClient(SB_URL, SB_KEY);
 
 const POINTS = [0, 12, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0];
 let teamData = [];
+let currentPot = 1;
 let isAdmin = false;
 
-// Fix Login Macet
-function handleLogin(role) {
-    const passInput = document.getElementById('admin-pass');
-    const screen = document.getElementById('login-screen');
+// Initial render tab POT
+document.getElementById('pot-nav').innerHTML = [1,2,3,4,5,6,7,8,9,10,11,12].map(num => `
+    <button class="btn-pot-tab ${num === 1 ? 'active' : ''}" id="pot-tab-${num}" onclick="filterByPot(${num})">POT ${num}</button>
+`).join('');
 
+function handleLogin(role) {
+    const pass = document.getElementById('admin-pass').value;
     if (role === 'admin') {
-        if (passInput.value === 'oslojaya') {
+        if (pass === 'oslojaya') {
             isAdmin = true;
-            screen.style.display = 'none';
-            document.getElementById('sync-status').innerText = '● ADMIN';
-            document.getElementById('sync-status').style.color = 'var(--green)';
-            loadData(); // Load data SETELAH login
-        } else {
-            alert('Password Salah!');
-        }
+            document.getElementById('login-screen').style.display = 'none';
+            loadData();
+        } else { alert('Password Salah!'); }
     } else {
         isAdmin = false;
-        screen.style.display = 'none';
+        document.getElementById('login-screen').style.display = 'none';
         document.getElementById('tab-input').style.display = 'none';
         document.getElementById('tab-config').style.display = 'none';
-        document.getElementById('sync-status').innerText = '● GUEST MODE';
-        document.getElementById('sync-status').style.color = '#ffb300';
-        showPage('board');
-        loadData(); // Load data SETELAH masuk
+        switchMainPage('board');
+        loadData();
     }
 }
 
 async function loadData() {
-    const { data: teams, error } = await client.from('tournament_data').select('*').order('team_index', { ascending: true });
-    if (error) {
-        console.error(error);
-        return;
-    }
+    const { data: teams } = await client.from('tournament_data').select('*').order('team_index', { ascending: true });
     teamData = teams || [];
-    renderInputPage();
-    renderBoardPage();
-    renderConfigPage();
+    renderInput();
+    renderBoard();
+    renderConfig();
 }
 
-function renderInputPage() {
+function filterByPot(num) {
+    currentPot = num;
+    document.querySelectorAll('.btn-pot-tab').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`pot-tab-${num}`).classList.add('active');
+    renderInput();
+    renderBoard();
+}
+
+function renderInput() {
+    // Tampilkan hanya tim yang memiliki t.pot sesuai currentPot
+    const filtered = teamData.filter(t => t.pot === currentPot);
     const container = document.getElementById('input-list');
-    if (!container) return;
-    container.innerHTML = teamData.map((t, i) => {
-        const isOpen = document.getElementById(`item-${i}`)?.classList.contains('open') ? 'open' : '';
+    
+    if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--muted)">Belum ada tim di POT ${currentPot}.<br>Atur POT tim di Tab PENGATURAN.</div>`;
+        return;
+    }
+
+    container.innerHTML = filtered.map((t) => {
+        const idx = t.team_index;
         return `
-        <div class="team-item ${isOpen}" id="item-${i}">
-            <div class="team-trigger" onclick="toggleAccordion(${i})">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <span style="color:var(--muted); font-weight:700; font-size:12px;">${i + 1}</span>
-                    <span style="font-weight:600">${t.team_name || 'Tim ' + (i+1)}</span>
-                    ${t.pot ? `<span class="pot-badge">POT ${t.pot}</span>` : ''}
-                </div>
+        <div class="team-item" id="item-${idx}">
+            <div class="team-trigger" onclick="toggleAccordion(${idx})">
+                <div style="font-weight:600">${t.team_name}</div>
                 <div style="color:var(--orange); font-weight:700;">${(POINTS[t.placement] || 0) + t.kills} PT</div>
             </div>
             <div class="panel-content">
-                <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">PILIH POT (GROUP)</div>
-                <div class="grid-generic">
-                    ${[1,2,3,4,5,6,7,8,9,10,11,12].map(p => `
-                        <button class="btn-opt ${t.pot === p ? 'active' : ''}" onclick="updateField(${i}, 'pot', ${p})">${p}</button>
-                    `).join('')}
-                </div>
                 <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">PLACEMENT</div>
                 <div class="grid-generic">
                     ${[1,2,3,4,5,6,7,8,9,10,11,12].map(p => `
-                        <button class="btn-opt ${t.placement === p ? 'active' : ''}" onclick="updateField(${i}, 'placement', ${p})">#${p}</button>
+                        <button class="btn-opt ${t.placement === p ? 'active' : ''}" onclick="updateField(${idx}, 'placement', ${p})">#${p}</button>
                     `).join('')}
                 </div>
                 <div class="kill-ctrl">
-                    <button class="k-btn" onclick="updateField(${i}, 'kills', ${t.kills - 1})">-</button>
-                    <span style="flex:1; text-align:center; font-weight:700; font-size:18px; color:var(--orange);">${t.kills} KILLS</span>
-                    <button class="k-btn" onclick="updateField(${i}, 'kills', ${t.kills + 1})">+</button>
+                    <button class="k-btn" onclick="updateField(${idx}, 'kills', ${t.kills - 1})">-</button>
+                    <span style="flex:1; text-align:center; font-weight:700; font-size:22px; color:var(--orange);">${t.kills} KILLS</span>
+                    <button class="k-btn" onclick="updateField(${idx}, 'kills', ${t.kills + 1})">+</button>
                 </div>
             </div>
         </div>`;
@@ -176,30 +194,53 @@ function renderInputPage() {
 async function updateField(idx, field, value) {
     if (!isAdmin) return;
     if (field === 'kills') value = Math.max(0, value);
-    teamData[idx][field] = value;
-    renderInputPage();
-    renderBoardPage();
+    
+    // Update local data
+    const teamIdx = teamData.findIndex(t => t.team_index === idx);
+    teamData[teamIdx][field] = value;
+    
+    renderInput();
+    renderBoard();
     await client.from('tournament_data').update({ [field]: value }).eq('team_index', idx);
 }
 
-function renderBoardPage() {
-    const sorted = [...teamData].map(t => ({
+function renderBoard() {
+    const filtered = teamData.filter(t => t.pot === currentPot).map(t => ({
         ...t,
         total: (POINTS[t.placement] || 0) + t.kills
     })).sort((a, b) => b.total - a.total || b.kills - a.kills);
 
-    document.getElementById('board-list').innerHTML = sorted.map((t, i) => `
+    document.getElementById('board-list').innerHTML = filtered.map((t, i) => `
         <div class="board-card">
-            <div style="font-family:'Rajdhani'; font-weight:700; font-size:18px; width:25px; color:${i < 3 ? 'var(--orange)' : 'white'}">${i+1}</div>
-            <div style="flex:1;">
-                <div style="font-weight:600;">${t.team_name}</div>
-                ${t.pot ? `<div style="font-size:9px; color:var(--orange)">POT ${t.pot}</div>` : ''}
-            </div>
+            <div style="font-family:'Rajdhani'; font-weight:700; font-size:20px; width:25px; color:${i < 3 ? 'var(--orange)' : 'white'}">${i+1}</div>
+            <div style="flex:1; font-weight:600;">${t.team_name}</div>
             <div style="text-align:right">
                 <div style="color:var(--orange); font-weight:700; font-size:18px;">${t.total}</div>
                 <div style="font-size:9px; color:var(--muted)">${t.kills} KILLS</div>
             </div>
         </div>`).join('');
+}
+
+function renderConfig() {
+    document.getElementById('edit-manual-list').innerHTML = teamData.map((t) => `
+        <div style="background:var(--card); padding:12px; border-radius:8px; margin-bottom:8px; border:1px solid var(--border)">
+            <input type="text" value="${t.team_name}" onchange="updateTeamName(${t.team_index}, this.value)" style="width:100%; background:var(--bg); border:1px solid var(--border); color:white; padding:8px; border-radius:5px; margin-bottom:10px;">
+            <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">PINDAHKAN KE POT:</div>
+            <div class="grid-generic">
+                ${[1,2,3,4,5,6,7,8,9,10,11,12].map(p => `
+                    <button class="btn-opt ${t.pot === p ? 'active' : ''}" onclick="updatePot(${t.team_index}, ${p})">POT ${p}</button>
+                `).join('')}
+            </div>
+        </div>
+    `).join('');
+}
+
+async function updatePot(idx, p) {
+    if(!isAdmin) return;
+    const teamIdx = teamData.findIndex(t => t.team_index === idx);
+    teamData[teamIdx].pot = p;
+    renderConfig();
+    await client.from('tournament_data').update({ pot: p }).eq('team_index', idx);
 }
 
 function toggleAccordion(idx) {
@@ -209,18 +250,13 @@ function toggleAccordion(idx) {
     if (!isOpen) el.classList.add('open');
 }
 
-function showPage(page) {
+function switchMainPage(page) {
     ['input', 'board', 'config'].forEach(p => {
-        const el = document.getElementById(`page-${p}`);
-        if(el) el.style.display = (p === page) ? 'block' : 'none';
+        document.getElementById(`page-${p}`).style.display = (p === page) ? 'block' : 'none';
+        document.getElementById(`tab-${p}`).classList.toggle('active', p === page);
     });
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.id === `tab-${page}`));
-}
-
-function renderConfigPage() {
-    document.getElementById('edit-manual-list').innerHTML = teamData.map((t, i) => `
-        <input type="text" value="${t.team_name}" onchange="updateTeamName(${i}, this.value)" style="width:100%; background:var(--card); border:1px solid var(--border); color:white; padding:10px; border-radius:8px; margin-bottom:8px;">
-    `).join('');
+    // Sembunyikan navigasi POT kalau di tab Pengaturan
+    document.getElementById('pot-nav').style.display = (page === 'config') ? 'none' : 'flex';
 }
 
 async function updateTeamName(idx, name) {
@@ -235,10 +271,10 @@ async function saveBulkTeams() {
     for(let i = 0; i < names.length; i++) {
         if(teamData[i]) await client.from('tournament_data').update({ team_name: names[i].trim() }).eq('team_index', i);
     }
+    alert('Nama tim berhasil diupdate!');
     loadData();
 }
 
-// Inisialisasi Realtime
 client.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_data' }, () => loadData()).subscribe();
 </script>
 </body>
