@@ -90,7 +90,7 @@
 
 <div id="page-config" class="scroll-area" style="display:none;">
     <div class="config-card">
-        <h4 style="color:var(--orange); margin-bottom:10px; font-family:'Rajdhani';">TAMBAH TIM BARU</h4>
+        <h4 style="color:var(--orange); margin-bottom:10px; font-family:'Rajdhani';">TAMBAH TIM BARU (BULK)</h4>
         <textarea id="raw-teams" class="input-dark" style="height: 100px;" placeholder="Tulis nama tim per baris..."></textarea>
         <button onclick="saveBulk()" style="width:100%; padding:12px; background:var(--orange); border:none; border-radius:8px; color:white; font-weight:700; cursor:pointer;">SIMPAN NAMA TIM</button>
     </div>
@@ -113,7 +113,7 @@ let currentPot = 1;
 let openId = null;
 let isAdmin = false;
 
-// Navigasi POT
+// Generate Navigasi POT 1-12
 document.getElementById('pot-nav').innerHTML = Array.from({length:12}, (_,i)=>i+1).map(n => `
     <button class="btn-pot-tab ${n==1?'active':''}" id="pot-tab-${n}" onclick="changePot(${n})">POT ${n}</button>
 `).join('');
@@ -173,23 +173,23 @@ function renderInput() {
                     ${[1,2,3,4,5,6,7,8,9,10,11,12].map(p => {
                         const isSelf = t.placement == p;
                         const isTaken = taken.includes(p) && !isSelf;
-                        return `<button class="btn-opt ${isSelf?'active':''} ${isTaken?'taken':''}" onclick="updateDb(${t.team_index},'placement',${p})">#${p}</button>`;
+                        return `<button class="btn-opt ${isSelf?'active':''} ${isTaken?'taken':''}" onclick="updateValue(${t.team_index},'placement',${p})">#${p}</button>`;
                     }).join('')}
                 </div>
                 
                 <div style="font-size:10px; color:var(--muted); margin-bottom:5px;">QUICK ADD KILLS</div>
                 <div class="kill-grid">
-                    <button class="btn-kill-add" onclick="updateDb(${t.team_index},'kills',1)">+1</button>
-                    <button class="btn-kill-add" onclick="updateDb(${t.team_index},'kills',5)">+5</button>
-                    <button class="btn-kill-add" onclick="updateDb(${t.team_index},'kills',10)">+10</button>
-                    <button class="btn-kill-add" onclick="updateDb(${t.team_index},'kills',20)">+20</button>
-                    <button class="btn-kill-reset" onclick="updateDb(${t.team_index},'reset',0)">RESET</button>
+                    <button class="btn-kill-add" onclick="updateValue(${t.team_index},'kills',1)">+1</button>
+                    <button class="btn-kill-add" onclick="updateValue(${t.team_index},'kills',5)">+5</button>
+                    <button class="btn-kill-add" onclick="updateValue(${t.team_index},'kills',10)">+10</button>
+                    <button class="btn-kill-add" onclick="updateValue(${t.team_index},'kills',20)">+20</button>
+                    <button class="btn-kill-reset" onclick="updateValue(${t.team_index},'reset',0)">RESET</button>
                 </div>
 
                 <div class="kill-ctrl">
-                    <button class="k-btn" onclick="updateDb(${t.team_index},'kills',-1)">-</button>
+                    <button class="k-btn" onclick="updateValue(${t.team_index},'kills',-1)">-</button>
                     <div style="flex:1; text-align:center; font-weight:700; font-size:22px; color:var(--orange);">${t.kills} KILLS</div>
-                    <button class="k-btn" style="border-color:var(--orange); color:var(--orange);" onclick="updateDb(${t.team_index},'kills',1)">+</button>
+                    <button class="k-btn" style="border-color:var(--orange); color:var(--orange);" onclick="updateValue(${t.team_index},'kills',1)">+</button>
                 </div>
 
                 <button class="btn-close-panel" onclick="toggleAcc(null)">SIMPAN & TUTUP</button>
@@ -200,19 +200,23 @@ function renderInput() {
     }).join('');
 }
 
-async function updateDb(id, field, val) {
+// Fungsi update dipisah agar tombol responsif
+async function updateValue(id, type, val) {
     const t = teamData.find(x => x.team_index === id);
     if(!t) return;
 
-    if(field === 'placement') {
+    if(type === 'placement') {
         t.placement = (t.placement === val) ? 0 : val;
-    } else if(field === 'reset') {
+    } else if(type === 'reset') {
         t.kills = 0;
     } else {
         t.kills = Math.max(0, t.kills + val);
     }
     
-    renderInput();
+    renderInput(); // Render tampilan dulu agar instan
+    renderBoard();
+    
+    // Kirim ke database di belakang layar
     await client.from('tournament_data').update({placement: t.placement, kills: t.kills}).eq('team_index', id);
 }
 
@@ -232,13 +236,13 @@ async function saveBulk() {
 }
 
 async function hardReset() {
-    if(!confirm('Hapus SEMUA tim dan skor di POT ini? Data tidak bisa kembali.')) return;
+    if(!confirm('Hapus SEMUA data di POT ini?')) return;
     await client.from('tournament_data').delete().eq('pot', currentPot);
     loadData();
 }
 
 async function deleteSingle(id) {
-    if(!confirm('Hapus tim ini secara permanen?')) return;
+    if(!confirm('Hapus tim ini?')) return;
     await client.from('tournament_data').delete().eq('team_index', id);
     loadData();
 }
